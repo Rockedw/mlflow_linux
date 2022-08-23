@@ -1,0 +1,13 @@
+name: My Project
+
+conda_env: conda.yaml
+entry_points:
+  main:
+    parameters:
+      config_path: {type: str}}
+      #regularization: {type: float, default: 0.1}
+    command: "python pre_deal.py -"
+#  validate:
+#    parameters:
+#      data_file: path
+#    command: "python validate.py {data_file}"

@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/Users/wangyan/PycharmProjects/MLFlow/mlruns/0/dd061af1777e4edfa9a3b4bbae9f6a45/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+name: ''
+run_id: dd061af1777e4edfa9a3b4bbae9f6a45
+run_uuid: dd061af1777e4edfa9a3b4bbae9f6a45
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1659512606926
+status: 1
+tags: []
+user_id: wangyan

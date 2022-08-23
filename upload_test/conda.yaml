@@ -1,0 +1,11 @@
+name: mlflow
+channels:
+  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free
+  - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
+  - defaults
+dependencies:
+  - python=3.7.13
+  - pip
+  - pip:
+      - pandas
+
