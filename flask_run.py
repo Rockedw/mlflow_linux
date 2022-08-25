@@ -76,14 +76,13 @@ class TaskRelation(db.Model):
     task_id = db.Column(db.Integer)
     repo_id = db.Column(db.Integer)
 
-
-# @app.errorhandler(Exception)
-# def error_handler(e):
+@app.errorhandler(Exception)
+def error_handler(e):
 #     """
 #     全局异常捕获，也相当于一个视图函数
 #     """
 #     print(str(e))
-#     return JsonResponse.error(msg=str(e)).to_dict()
+    return JsonResponse.error(data=str(e)).to_dict()
 
 
 def get_model_source(name, version):
@@ -100,10 +99,14 @@ def query_all_task():
     :return:
     """
     print('query all task')
-    tasks = Task.query.all()
+    try:
+        tasks = Task.query.all()
+    except Exception as e:
+        tasks = []
     res = []
-    for task in tasks:
-        res.append({'id': task.id, 'value': task.value})
+    if len(tasks) > 0:
+        for task in tasks:
+            res.append({'id': task.id, 'value': task.value})
     return JsonResponse.success(data=res).to_dict()
 
 
@@ -178,9 +181,7 @@ def query_all_repo():
     repos = Repository.query.all()
     res = []
     for repo in repos:
-        res.append(
-            {'id': repo.id, 'owner_name': repo.owner_name, 'repo_name': repo.repo_name, 'lower_name': repo.lower_name,
-             'update_time': repo.update_time})
+        res.append({'id': repo.id, 'owner_name': repo.owner_name, 'repo_name': repo.repo_name, 'lower_name': repo.lower_name,'update_time': repo.update_time})
     return JsonResponse.success(data=res).to_dict()
 
 
@@ -350,8 +351,10 @@ def run_mlflow_project():
 
 @app.route('/test', methods=['POST'])
 def test():
+    print('---------------------------------------------')
     print(request.json)
-    return JsonResponse.success().to_dict()
+    print('---------------------------------------------')
+    return JsonResponse.success(request.json).to_dict()
 
 
 if __name__ == '__main__':

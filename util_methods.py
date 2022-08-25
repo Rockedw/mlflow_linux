@@ -46,10 +46,10 @@ def download_directory(download_path: str, save_path='/tmp/models/'):
         endpoint_url=endpoint_url
     )
     bucket = resource.Bucket(bucket_name)
+    if os.path.exists(save_path+download_path):
+        return save_path+download_path+'/model'
     for obj in bucket.objects.filter(Prefix=download_path):
         key = obj.key
-        if os.path.exists(save_path+download_path):
-            break
         if '.git' not in key:
             if not os.path.exists(os.path.dirname(save_path + obj.key)):
                 os.makedirs(os.path.dirname(save_path + obj.key))
