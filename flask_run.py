@@ -136,7 +136,8 @@ def query_all_project():
         repo_owner = repo.repo_owner
         temp = get_project_relation_by_pid(project.id)
         res.append(
-            {'project_id': project.id, 'repo_owner': repo_owner, 'repo_name': repo_name, 'model_names': temp['models'],
+            {'project_id': project.id, 'repo_owner': repo_owner, 'repo_name': repo_name,
+             'branch_name': project.branch_name, 'model_names': temp['models'],
              'model_versions': temp['versions']})
     return JsonResponse.success(data=res).to_dict()
 
@@ -193,10 +194,10 @@ def query_project_by_task_id():
         repo_owner = repo.repo_owner
         temp = get_project_relation_by_pid(project.id)
         res.append(
-            {'project_id': project.id, 'repo_owner': repo_owner, 'repo_name': repo_name, 'model_names': temp['models'],
+            {'project_id': project.id, 'repo_owner': repo_owner, 'repo_name': repo_name,
+             'branch_name': project.branch_name, 'model_names': temp['models'],
              'model_versions': temp['versions']})
     return res
-
 
 
 def query_branches_by_repo_name_and_owner(owner_name, repo_name, update_time):

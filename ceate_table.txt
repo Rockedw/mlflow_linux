@@ -1,0 +1,42 @@
+create table if not exists model_list (
+    id bigint  unsigned AUTO_INCREMENT,
+    PRIMARY KEY ( id )
+)ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+create table if not exists model_list_relation (
+    id bigint  unsigned AUTO_INCREMENT,
+    repo_id bigint unsigned not null,
+    branch varchar(500),
+    model_list_id bigint not null,
+     PRIMARY KEY ( id )
+)ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+create table if not exists model_relation (
+    id bigint  unsigned AUTO_INCREMENT,
+    model_list_id bigint unsigned not null,
+    name varchar(256) not null,
+    version int not null,
+    PRIMARY KEY ( id )
+)ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+create table if not exists task(
+    id bigint unsigned AUTO_INCREMENT,
+    value varchar(255) not null,
+     PRIMARY KEY ( id )
+)ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+create table if not exists task_relation(
+    id bigint unsigned AUTO_INCREMENT,
+    task_id bigint unsigned not null,
+    repo_id bigint unsigned not null,
+     PRIMARY KEY ( id )
+)ENGINE=InnoDB DEFAULT CHARSET=utf8;
+ADD UNIQUE KEY(task_id, repo_id);
+
+
+
+
+
+curl -X 'POST'  ''http://locahost:3000/api/v1/user/repos?token=1b6ef1abf0564839abe7c484489be8b98965a481'  -H 'accept: application/json'  -H 'Content-Type: application/json'  -d '{ "auto_init": true, "default_branch": "master", "description": "nothing", "name": "test_creation", "private": true, "template": flase, "trust_model": "default"}'
+
+curl -X 'POST'  'http://localhost:43000/api/v1/user/repos?token=1b6ef1abf0564839abe7c484489be8b98965a481'  -H 'accept: application/json'  -H 'Content-Type: application/json'  -d '{ "auto_init": true, "default_branch": "master", "description": "nothing",  "name": "test_creation",  "trust_model": "default"}'
