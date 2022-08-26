@@ -49,7 +49,7 @@ class Model(db.Model):
     模型
     """
     __tablename__ = 'model_versions'
-    __bind_key__ = 'mlflow'
+    __bind_key__ = ''
     name = db.Column('name', db.String(256), primary_key=True)
     version = db.Column('version', db.Integer, primary_key=True)
     source = db.Column('source', db.String(500))
@@ -76,13 +76,43 @@ class TaskRelation(db.Model):
     task_id = db.Column(db.Integer)
     repo_id = db.Column(db.Integer)
 
+
+class Project(db.Model):
+    __tablename__ = 'project'
+    __bindkey__ = 'mlflow'
+    id = db.Column('id', db.Integer)
+    repo_id = db.Column('repo_id', db.Integer)
+    branch_name = db.Column('branch_name', db.String(255))
+
+
+class ProjectRelation(db.Model):
+    __tablename__ = 'project_relation'
+    __bindkey__ = 'mlflow'
+    id = db.Column('id', db.Integer)
+    project_id = db.Column('project_id', db.Integer)
+    model_name = db.Column('model_name', db.String(500))
+    model_version = db.Column('model_version', db.Integer)
+
+
 @app.errorhandler(Exception)
 def error_handler(e):
-#     """
-#     全局异常捕获，也相当于一个视图函数
-#     """
-#     print(str(e))
+    #     """
+    #     全局异常捕获，也相当于一个视图函数
+    #     """
+    #     print(str(e))
     return JsonResponse.error(data=str(e)).to_dict()
+
+
+def get_project_relation_by_pid(project_id):
+    try:
+        relations = ProjectRelation.query.filter_by(project_id=project_id).all()
+    except:
+        return None
+    res = {'models': [], 'versions': []}
+    for relation in relations:
+        res['models'].append(relation.model_name)
+        res['versions'].append(relation.model_version)
+    return res
 
 
 def get_model_source(name, version):
@@ -90,6 +120,25 @@ def get_model_source(name, version):
     if len(source) > 0:
         print(source[0].source)
         return source[0].source
+    return None
+
+
+@app.route('/get_all_project', methods=['GET'])
+def query_all_project():
+    try:
+        projects = Project.query.all()
+    except Exception as e:
+        projects = []
+    res = []
+    for project in projects:
+        repo = Repository.query.filter_by(id=project.repo_id).all()[0]
+        repo_name = repo.repo_name
+        repo_owner = repo.repo_owner
+        temp = get_project_relation_by_pid(project.id)
+        res.append(
+            {'project_id': project.id, 'repo_owner': repo_owner, 'repo_name': repo_name, 'model_names': temp['models'],
+             'model_versions': temp['versions']})
+    return JsonResponse.success(data=res).to_dict()
 
 
 @app.route('/query_all_task', methods=['GET'])
@@ -104,9 +153,8 @@ def query_all_task():
     except Exception as e:
         tasks = []
     res = []
-    if len(tasks) > 0:
-        for task in tasks:
-            res.append({'id': task.id, 'value': task.value})
+    for task in tasks:
+        res.append({'id': task.id, 'value': task.value})
     return JsonResponse.success(data=res).to_dict()
 
 
@@ -125,6 +173,30 @@ def query_repo_by_task_id():
             res.append({'id': temp[0].id, 'owner_name': temp[0].owner_name, 'repo_name': temp[0].repo_name})
     print(res)
     return JsonResponse.success(data=res).to_dict()
+
+
+@app.route('/query_project_by_task_id', methods=['POST'])
+def query_project_by_task_id():
+    task_id = request.json.get('task_id')
+    projects = []
+    task_id = request.json.get('task_id')
+    res = []
+    task_relations = TaskRelation.query.filter_by(task_id=task_id).all()
+    for task_relation in task_relations:
+        temp = db.session.query(Project).join(Repository).filter(Project.repo_id == Repository.id).filter(
+            Repository.id == task_relation.repo_id).all()
+        projects.append(temp)
+
+    for project in projects:
+        repo = Repository.query.filter_by(id=project.repo_id).all()[0]
+        repo_name = repo.repo_name
+        repo_owner = repo.repo_owner
+        temp = get_project_relation_by_pid(project.id)
+        res.append(
+            {'project_id': project.id, 'repo_owner': repo_owner, 'repo_name': repo_name, 'model_names': temp['models'],
+             'model_versions': temp['versions']})
+    return res
+
 
 
 def query_branches_by_repo_name_and_owner(owner_name, repo_name, update_time):
@@ -181,7 +253,9 @@ def query_all_repo():
     repos = Repository.query.all()
     res = []
     for repo in repos:
-        res.append({'id': repo.id, 'owner_name': repo.owner_name, 'repo_name': repo.repo_name, 'lower_name': repo.lower_name,'update_time': repo.update_time})
+        res.append(
+            {'id': repo.id, 'owner_name': repo.owner_name, 'repo_name': repo.repo_name, 'lower_name': repo.lower_name,
+             'update_time': repo.update_time})
     return JsonResponse.success(data=res).to_dict()
 
 
@@ -327,9 +401,8 @@ def run_mlflow_project():
     for i in range(0, len(model_names)):
         local_path = download_directory(download_path=get_model_source(s3_models[i][0], version=s3_models[i][1]))
         model_local_paths.append(local_path)
-        config_json[model_names[i]]=local_path
-    input_text = data.get('input_text') 
-    
+        config_json[model_names[i]] = local_path
+    input_text = data.get('input_text')
 
     with open(path + '/mlflow_model_config.json', 'w') as f:
         f.write(json.dumps(config_json))
@@ -338,7 +411,7 @@ def run_mlflow_project():
               'cd ' + path + ' && ' + \
               'rm -rf .git &&' + \
               'cd ' + cwd + ' && ' + \
-              'mlflow run ' + path + ' -P config=./mlflow_model_config.json -P input='+input_text + ' --env-manager=local'
+              'mlflow run ' + path + ' -P config=./mlflow_model_config.json -P input=' + input_text + ' --env-manager=local'
     # command = 'mlflow run ' + repo_url + ' --version ' + branch_name
     print(command)
     cmd(command)
