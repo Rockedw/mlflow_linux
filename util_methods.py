@@ -39,7 +39,7 @@ def download_directory(download_path: str, save_path='/tmp/models/'):
     # bucket_name = 'models'
     print(save_path)
     print('download ' + download_path)
-    download_path = download_path.replace('s3://mlflow', '')
+    download_path = download_path.replace('s3://models', '')
     print('download ' + download_path)
     resource = boto3.resource(
         's3',

@@ -13,7 +13,7 @@ def transform(model_path):
 if __name__ == "__main__":
     model_path = r'D:\MRC_Competition_Dureader-master\main\models\chinese-macbert-large'
     print(1)
-    mlflow.tracking.set_tracking_uri('http://39.105.6.98:43100')
+    mlflow.tracking.set_tracking_uri('http://39.105.6.98:43082')
     print(2)
     mlflow.log_artifacts(local_dir=model_path, artifact_path='model')
     print(3)

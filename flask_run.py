@@ -95,14 +95,14 @@ class ProjectRelation(db.Model):
     model_name = db.Column('model_name', db.String(500))
     model_version = db.Column('model_version', db.Integer)
 
-
-@app.errorhandler(Exception)
-def error_handler(e):
-    #     """
-    #     全局异常捕获，也相当于一个视图函数
-    #     """
-    #     print(str(e))
-    return JsonResponse.error(data=str(e)).to_dict()
+#
+# @app.errorhandler(Exception)
+# def error_handler(e):
+#     #     """
+#     #     全局异常捕获，也相当于一个视图函数
+#     #     """
+#     #     print(str(e))
+#     return JsonResponse.error(data=str(e)).to_dict()
 
 
 def get_project_relation_by_pid(project_id):
@@ -137,11 +137,13 @@ def query_all_project():
         repo = Repository.query.filter_by(id=project.repo_id).all()[0]
         repo_name = repo.repo_name
         repo_owner = repo.owner_name
+        update_time = repo.update_time
         temp = get_project_relation_by_pid(project.id)
         res.append(
             {'project_id': project.id, 'repo_owner': repo_owner, 'repo_name': repo_name,
              'branch_name': project.branch_name, 'model_names': temp['models'],
-             'model_versions': temp['versions']})
+             'model_versions': temp['versions'],'update_time':update_time})
+        print(res)
     return JsonResponse.success(data=res).to_dict()
 
 
@@ -211,7 +213,7 @@ def query_branches_by_repo_name_and_owner(owner_name, repo_name, update_time):
     :param update_time:
     :return:
     """
-    repo_url = git_url + '/' + owner_name + '/' + repo_name + '.git'
+    repo_url = git_url + owner_name + '/' + repo_name + '.git'
     print(repo_url)
     path = './repos/' + owner_name + '/' + repo_name
     repo = None
@@ -389,7 +391,7 @@ def run_mlflow_project():
     model_names: list = data.get('model_names')
     s3_models: list = data.get('s3_models')
 
-    repo_url = git_url + '/' + owner_name + '/' + repo_name + '.git'
+    repo_url = git_url + owner_name + '/' + repo_name + '.git'
     version = './temp/repos/' + owner_name + '/' + repo_name + '/' + temp_version
     path = version + '/' + repo_name
     # print('path : ' + path)
@@ -429,16 +431,19 @@ def run_mlflow_project():
 @app.route('/load_model', methods=['POST'])
 def load_model():
     data = request.json
-    owner_name = data.get('owner_name')
+    owner_name = data.get('repo_owner')
     repo_name = data.get('repo_name')
     branch_name = data.get('branch_name')
     update_time = data.get('update_time')
     model_names: list = data.get('model_names')
     model_versions: list = data.get('model_versions')
+    print(data)
+
     branches, temp_version = query_branches_by_repo_name_and_owner(owner_name=owner_name,
                                                                    repo_name=repo_name,
                                                                    update_time=update_time
                                                                    )
+    print('branches:'+str(branches))
     version = './temp/repos/' + owner_name + '/' + repo_name + '/' + temp_version
     if not os.path.exists(version):
         return JsonResponse.error(data='没有对应的代码仓库').to_dict()
