@@ -8,5 +8,6 @@
     <mapping directory="$PROJECT_DIR$/repos/rock/mrc_demo" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/repos/rock/second_repo" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/temp/repos/rock/haha/0/haha" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/temp/repos/rock/mrc/0/mrc" vcs="Git" />
   </component>
 </project>

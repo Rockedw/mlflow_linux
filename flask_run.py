@@ -95,6 +95,7 @@ class ProjectRelation(db.Model):
     model_name = db.Column('model_name', db.String(500))
     model_version = db.Column('model_version', db.Integer)
 
+
 #
 # @app.errorhandler(Exception)
 # def error_handler(e):
@@ -142,7 +143,7 @@ def query_all_project():
         res.append(
             {'project_id': project.id, 'repo_owner': repo_owner, 'repo_name': repo_name,
              'branch_name': project.branch_name, 'model_names': temp['models'],
-             'model_versions': temp['versions'],'update_time':update_time})
+             'model_versions': temp['versions'], 'update_time': update_time})
         print(res)
     return JsonResponse.success(data=res).to_dict()
 
@@ -443,7 +444,7 @@ def load_model():
                                                                    repo_name=repo_name,
                                                                    update_time=update_time
                                                                    )
-    print('branches:'+str(branches))
+    print('branches:' + str(branches))
     version = './temp/repos/' + owner_name + '/' + repo_name + '/' + temp_version
     if not os.path.exists(version):
         return JsonResponse.error(data='没有对应的代码仓库').to_dict()
@@ -472,7 +473,7 @@ def load_model():
     cmd(command)
     service_url = ''
     with open(path + '/' + 'mlflow_output') as f:
-        service_url= f.readline()
+        service_url = f.readline()
         key = repo_name + '/' + branch_name
         for i in range(0, len(model_names)):
             key = key + '/' + model_names[i] + '/' + model_versions[i]
