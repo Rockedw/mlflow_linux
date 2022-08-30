@@ -1,4 +1,6 @@
 import stat
+from socket import socket, AF_INET, SOCK_STREAM
+
 import boto3
 import os
 import subprocess
@@ -9,7 +11,6 @@ access_key = Config.access_key
 secret_key = Config.secret_key
 endpoint_url = Config.endpoint_url
 git_url = Config.git_url
-
 
 
 def rmtree(top):
@@ -27,6 +28,7 @@ def rmtree(top):
             os.rmdir(os.path.join(root, name))
     os.rmdir(top)
 
+
 def download_directory(download_path: str, save_path='/tmp/models/'):
     """
     从S3中下载模型到本地
@@ -37,7 +39,7 @@ def download_directory(download_path: str, save_path='/tmp/models/'):
     # bucket_name = 'models'
     print(save_path)
     print('download ' + download_path)
-    download_path = download_path.replace('s3://models', '')
+    download_path = download_path.replace('s3://mlflow', '')
     print('download ' + download_path)
     resource = boto3.resource(
         's3',
@@ -46,8 +48,8 @@ def download_directory(download_path: str, save_path='/tmp/models/'):
         endpoint_url=endpoint_url
     )
     bucket = resource.Bucket(bucket_name)
-    if os.path.exists(save_path+download_path):
-        return save_path+download_path+'/model'
+    if os.path.exists(save_path + download_path):
+        return save_path + download_path + '/model'
     for obj in bucket.objects.filter(Prefix=download_path):
         key = obj.key
         if '.git' not in key:
@@ -57,6 +59,7 @@ def download_directory(download_path: str, save_path='/tmp/models/'):
             print(save_path + key)
             bucket.download_file(Key=key, Filename=save_path + key)
     return save_path + download_path + '/model'
+
 
 def cmd(command):
     """
@@ -95,6 +98,17 @@ def scan_dir(path, head: dict = None):
             temp = {'is_dir': False, 'title': name, 'key': path + os.sep + name}
             head['children'].append(temp)
     return head
+
+
+def portscanner(host='127.0.0.1', ports=range(40000, 41000)):
+    for port in ports:
+        try:
+            s = socket(AF_INET, SOCK_STREAM)
+            s.connect((host, port))
+            s.close()
+        except:
+            print(f"{port} open")
+            return port
 
 
 if __name__ == '__main__':

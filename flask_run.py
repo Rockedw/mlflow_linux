@@ -10,10 +10,11 @@ import os
 import subprocess
 from git import Repo
 from config import Config
-from util_methods import cmd, download_directory, rmtree, scan_dir
+from util_methods import cmd, download_directory, rmtree, scan_dir, portscanner
 import shutil
 import json
 from JsonResponse import JsonResponse
+import pickle
 
 pymysql.install_as_MySQLdb()
 
@@ -28,6 +29,7 @@ access_key = Config.access_key
 secret_key = Config.secret_key
 endpoint_url = Config.endpoint_url
 git_url = Config.git_url
+service_url_dict = {}
 
 
 class Repository(db.Model):
@@ -49,7 +51,7 @@ class Model(db.Model):
     模型
     """
     __tablename__ = 'model_versions'
-    __bind_key__ = ''
+    __bind_key__ = 'mlflow'
     name = db.Column('name', db.String(256), primary_key=True)
     version = db.Column('version', db.Integer, primary_key=True)
     source = db.Column('source', db.String(500))
@@ -61,7 +63,7 @@ class Task(db.Model):
     任务
     """
     __tablename__ = 'task'
-    __bind_key__ = 'gitea'
+    __bind_key__ = 'mlflow'
     id = db.Column(db.Integer, primary_key=True, index=True)
     value = db.Column('value', db.String(255))
 
@@ -71,7 +73,7 @@ class TaskRelation(db.Model):
     代码仓库和任务的关系
     """
     __tablename__ = 'task_relation'
-    __bind_key__ = 'gitea'
+    __bind_key__ = 'mlflow'
     id = db.Column(db.Integer, primary_key=True, index=True)
     task_id = db.Column(db.Integer)
     repo_id = db.Column(db.Integer)
@@ -79,16 +81,16 @@ class TaskRelation(db.Model):
 
 class Project(db.Model):
     __tablename__ = 'project'
-    __bindkey__ = 'mlflow'
-    id = db.Column('id', db.Integer)
+    __bind_key__ = 'mlflow'
+    id = db.Column('id', db.Integer, primary_key=True, index=True)
     repo_id = db.Column('repo_id', db.Integer)
     branch_name = db.Column('branch_name', db.String(255))
 
 
 class ProjectRelation(db.Model):
     __tablename__ = 'project_relation'
-    __bindkey__ = 'mlflow'
-    id = db.Column('id', db.Integer)
+    __bind_key__ = 'mlflow'
+    id = db.Column('id', db.Integer, primary_key=True, index=True)
     project_id = db.Column('project_id', db.Integer)
     model_name = db.Column('model_name', db.String(500))
     model_version = db.Column('model_version', db.Integer)
@@ -123,8 +125,9 @@ def get_model_source(name, version):
     return None
 
 
-@app.route('/get_all_project', methods=['GET'])
+@app.route('/query_all_project', methods=['GET'])
 def query_all_project():
+    print('get_all_project')
     try:
         projects = Project.query.all()
     except Exception as e:
@@ -133,7 +136,7 @@ def query_all_project():
     for project in projects:
         repo = Repository.query.filter_by(id=project.repo_id).all()[0]
         repo_name = repo.repo_name
-        repo_owner = repo.repo_owner
+        repo_owner = repo.owner_name
         temp = get_project_relation_by_pid(project.id)
         res.append(
             {'project_id': project.id, 'repo_owner': repo_owner, 'repo_name': repo_name,
@@ -423,6 +426,56 @@ def run_mlflow_project():
     return JsonResponse.success(data=res).to_dict()
 
 
+@app.route('/load_model', methods=['POST'])
+def load_model():
+    data = request.json
+    owner_name = data.get('owner_name')
+    repo_name = data.get('repo_name')
+    branch_name = data.get('branch_name')
+    update_time = data.get('update_time')
+    model_names: list = data.get('model_names')
+    model_versions: list = data.get('model_versions')
+    branches, temp_version = query_branches_by_repo_name_and_owner(owner_name=owner_name,
+                                                                   repo_name=repo_name,
+                                                                   update_time=update_time
+                                                                   )
+    version = './temp/repos/' + owner_name + '/' + repo_name + '/' + temp_version
+    if not os.path.exists(version):
+        return JsonResponse.error(data='没有对应的代码仓库').to_dict()
+    cwd = os.getcwd()
+    command = 'cd ' + cwd + ' && ' + 'cd ' + version + ' && ' + 'git checkout ' + branch_name
+    cmd(command)
+    config_json = {}
+    model_local_paths = []
+    port = portscanner()
+    path = version + '/' + repo_name
+    for i in range(0, len(model_names)):
+        local_path = download_directory(download_path=get_model_source(model_names[i], version=model_versions[i]))
+        model_local_paths.append(local_path)
+        config_json[model_names[i]] = local_path
+        config_json['port'] = port
+    with open(path + '/mlflow_model_config.json', 'w') as f:
+        f.write(json.dumps(config_json))
+    f.close()
+    command = 'cd ' + cwd + ' && ' + \
+              'cd ' + path + ' && ' + \
+              'rm -rf .git &&' + \
+              'cd ' + cwd + ' && ' + \
+              'mlflow run ' + path + ' -P config=./mlflow_model_config.json --env-manager=local'
+    # command = 'mlflow run ' + repo_url + ' --version ' + branch_name
+    print(command)
+    cmd(command)
+    service_url = ''
+    with open(path + '/' + 'mlflow_output') as f:
+        service_url= f.readline()
+        key = repo_name + '/' + branch_name
+        for i in range(0, len(model_names)):
+            key = key + '/' + model_names[i] + '/' + model_versions[i]
+        service_url_dict[key] = service_url
+    f.close()
+    return JsonResponse.success(data=service_url).to_dict()
+
+
 @app.route('/test', methods=['POST'])
 def test():
     print('---------------------------------------------')
@@ -432,6 +485,10 @@ def test():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8081, debug=True)
+    # p1 = pickle.dumps(app)
+    # print('================================')
+    # print(p1)
+    app.run(host='0.0.0.0', port=8084, debug=True)
+
     # get_model_source('mini_model', 1)
     # print(download_directory('s3://models/0/48213a12f43f448ea97a11f2f67ec0e0/artifacts'))

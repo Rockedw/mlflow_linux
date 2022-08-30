@@ -1,26 +1,36 @@
-import re
-import subprocess
-import sys
+import threading
+from socket import *
 
-import test2
+lock = threading.Lock()  # 确保 多个线程在共享资源的时候不会出现脏数据
+openNum = 0  # 端口开放数量统计
+threads = []  # 线程池
 
-#
-#
-# text = '<div class="layout-art review-features"><h3 class="layout-art-tit">Features</h3><h4>小标题</h4><p>普通段落...</p ></div><div class="layout-art review-tips"><h3 class="layout-art-tit">Tips</h3><h4>小标题</h4><p>普通段落...</p ></div><div class="layout-art review-pac"><h3 class="layout-art-tit">Pros &amp; Cons</h3><ul class="prco-pr"><li class="prco-pr-li">优点</li></ul><ul class="prco-pr"><li class="prco-co-li">缺点</li></ul></div><div class="layout-art review-faq"><h3 class="layout-art-tit">FAQ</h3></div><h4 class="review-faq-q">问题</h4><div class="review-faq-answer"><ul><li>无序列表子项</li><li>无序列表子项</li></ul></div><div class="layout-art review-增加大标题"><h3 class="layout-art-tit">增加大标题</h3><ol><li class="review-ol-li">有序列表子项</li><li class="review-ol-li">有序列表子项</li></ol></div></div>'
-#
-#
-# pattern = re.compile("<li[\S\s]*class[\S\s]*=[\S\s]*layout-art-tit[\S\s]*>([\S\s]*?)<[\S\s]*/li[\S\s]*>")
-# print(pattern.findall(text))
+
+def portscanner(host, ports):
+    for port in ports:
+        try:
+            s = socket(AF_INET, SOCK_STREAM)
+            s.connect((host, port))
+            s.close()
+        except:
+            print(f"{port} open")
+            return port
+
+
+# def main(ip, ports=range(8082,8083)):  # 设置 端口缺省值0-65535
+#     setdefaulttimeout(1)
+#     for port in ports:
+#         t = threading.Thread(target=portscanner, args=(ip, port))
+#         threads.append(t)
+#         t.start()
+#     for t in threads:
+#         t.join()
+#     print(f"PortScan is Finish ，OpenNum is {openNum}")
+
 
 if __name__ == '__main__':
-    p = subprocess.Popen('python test2.py', shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
-    print(type(p))
-    p2 = subprocess.Popen()
-    while True:
-        line = input()
-        p.stdin.write(bytes(line + '\n', 'utf-8'))
-        p.stdin.flush()
-        output = p.stdout.readline()
-        sys.stdout.write(str(output, 'utf-8'))
-        sys.stdout.flush()
+    ip = '127.0.0.1'
+    # main(ip,[22,101,8080,8000])          # 输入端口扫描
+    # main(ip)
+
+    portscanner(ip,ports=range(43000,65535))
