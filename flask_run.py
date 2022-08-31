@@ -1,24 +1,19 @@
 # -*- coding: UTF-8 -*-
 import signal
-import stat
 import time
 
-import boto3
-import mlflow
+import requests
 from flask import Flask, request
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 import pymysql
 import os
-import subprocess
 from git import Repo
 from config import Config
 from util_methods import cmd, download_directory, rmtree, scan_dir, portscanner
 import shutil
 import json
-from time import sleep
 from JsonResponse import JsonResponse
-import pickle
 
 pymysql.install_as_MySQLdb()
 
@@ -444,6 +439,11 @@ def load_model():
     model_names: list = data.get('model_names')
     model_versions: list = data.get('model_versions')
     print(data)
+    key = repo_name + '/' + branch_name
+    for i in range(0, len(model_names)):
+        key = key + '/' + model_names[i] + '/' + str(model_versions[i])
+    if service_url_dict[key] is not None:
+        return service_url_dict[key]
 
     branches, temp_version = query_branches_by_repo_name_and_owner(owner_name=owner_name,
                                                                    repo_name=repo_name,
@@ -488,9 +488,6 @@ def load_model():
             time.sleep(5)
     with open(path + '/' + 'mlflow_output') as f:
         service_url = f.readline()
-        key = repo_name + '/' + branch_name
-        for i in range(0, len(model_names)):
-            key = key + '/' + model_names[i] + '/' + str(model_versions[i])
         service_url_dict[key] = service_url
         service_process_pid_dict[key] = pid
     f.close()
@@ -505,11 +502,20 @@ def test():
     return JsonResponse.success(request.json).to_dict()
 
 
-@app.route('/tes2', methods=['POST'])
+@app.route('/test2', methods=['GET'])
 def test2():
     print('---------------------------------------------')
     print('---------------------------------------------')
     return JsonResponse.success(str(service_process_pid_dict) + str(service_url_dict)).to_dict()
+
+
+@app.route('/request_service_url', methods=['POST'])
+def request_service_url():
+    post_data = request.json
+    service_url = post_data.get('service_url')
+    data = post_data.get('data')
+    res = requests.post(url=service_url, data=data)
+    return JsonResponse.success(data=res.json()).to_dict()
 
 
 @app.route('/close_service', methods=['POST'])
