@@ -477,7 +477,7 @@ def load_model():
     service_url = ''
     cnt = 0
     while cnt < 30:
-        if os.path.exists(path + '/' + 'mlflow_output')
+        if os.path.exists(path + '/' + 'mlflow_output'):
             break
         else:
             time.sleep(5)
@@ -503,7 +503,7 @@ if __name__ == '__main__':
     # p1 = pickle.dumps(app)
     # print('================================')
     # print(p1)
-    app.run(host='0.0.0.0', port=8081, debug=True)
+    app.run(host='0.0.0.0', port=8081, debug=False)
 
     # get_model_source('mini_model', 1)
     # print(download_directory('s3://models/0/48213a12f43f448ea97a11f2f67ec0e0/artifacts'))

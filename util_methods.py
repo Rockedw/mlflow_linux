@@ -72,10 +72,10 @@ def cmd(command):
     try:
         subp = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding="utf-8")
         # subp.wait()
-        # print(subp.communicate()[1])
+        print(subp.communicate()[1])
     except Exception as e:
         print(str(e))
-        print(subp.communicate()[1])
+        # print(subp.communicate()[1])
 
     # if subp.poll() == 0:
     #     print(subp.communicate()[1])
