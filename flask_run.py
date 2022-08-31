@@ -477,18 +477,17 @@ def load_model():
     service_url = ''
     cnt = 0
     while cnt < 30:
-        try:
-            with open(path + '/' + 'mlflow_output') as f:
-                service_url = f.readline()
-                key = repo_name + '/' + branch_name
-                for i in range(0, len(model_names)):
-                    key = key + '/' + model_names[i] + '/' + model_versions[i]
-                service_url_dict[key] = service_url
-            f.close()
+        if os.path.exists(path + '/' + 'mlflow_output')
             break
-        except Exception as e:
+        else:
             time.sleep(5)
-
+    with open(path + '/' + 'mlflow_output') as f:
+        service_url = f.readline()
+        key = repo_name + '/' + branch_name
+        for i in range(0, len(model_names)):
+            key = key + '/' + model_names[i] + '/' + model_versions[i]
+        service_url_dict[key] = service_url
+    f.close()
     return JsonResponse.success(data=service_url).to_dict()
 
 
@@ -504,7 +503,7 @@ if __name__ == '__main__':
     # p1 = pickle.dumps(app)
     # print('================================')
     # print(p1)
-    app.run(host='0.0.0.0', port=8084, debug=True)
+    app.run(host='0.0.0.0', port=8081, debug=True)
 
     # get_model_source('mini_model', 1)
     # print(download_directory('s3://models/0/48213a12f43f448ea97a11f2f67ec0e0/artifacts'))
