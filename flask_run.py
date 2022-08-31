@@ -475,7 +475,8 @@ def load_model():
               'mlflow run ' + path + ' -P config=mlflow_model_config.json --env-manager=local'
     # command = 'mlflow run ' + repo_url + ' --version ' + branch_name
     print(command)
-    pid = cmd(command)
+    # pid = cmd(command)
+    cmd(command)
     service_url = ''
     cnt = 0
     while cnt <= 30:
@@ -491,7 +492,7 @@ def load_model():
         for i in range(0, len(model_names)):
             key = key + '/' + model_names[i] + '/' + model_versions[i]
         service_url_dict[key] = service_url
-        service_process_pid_dict[key] = pid
+        # service_process_pid_dict[key] = pid
     f.close()
     return JsonResponse.success(data=service_url).to_dict()
 

@@ -71,8 +71,8 @@ def cmd(command):
     try:
         subp = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding="utf-8")
         # subp.wait()
-        print(subp.communicate()[1])
-        return subp.pid
+        # print(subp.communicate()[1])
+        # return subp.pid
     except Exception as e:
         print(str(e))
         # print(subp.communicate()[1])
