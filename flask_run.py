@@ -442,7 +442,7 @@ def load_model():
     key = repo_name + '/' + branch_name
     for i in range(0, len(model_names)):
         key = key + '/' + model_names[i] + '/' + str(model_versions[i])
-    if service_url_dict[key] is not None:
+    if key in service_url_dict:
         return service_url_dict[key]
 
     branches, temp_version = query_branches_by_repo_name_and_owner(owner_name=owner_name,
@@ -521,7 +521,7 @@ def request_service_url():
 @app.route('/close_service', methods=['POST'])
 def close_service():
     key = request.json('service_key')
-    if service_process_pid_dict[key] is None:
+    if key not in service_process_pid_dict or service_process_pid_dict['key'] is None:
         return '没有 ' + key + ' 这个进程'
     pid = service_process_pid_dict[key]
     os.kill(pid, signal.SIGKILL)
