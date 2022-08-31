@@ -1,4 +1,5 @@
 # -*- coding: UTF-8 -*-
+import signal
 import stat
 import time
 
@@ -33,6 +34,7 @@ secret_key = Config.secret_key
 endpoint_url = Config.endpoint_url
 git_url = Config.git_url
 service_url_dict = {}
+service_process_pid_dict = {}
 
 
 class Repository(db.Model):
@@ -473,7 +475,7 @@ def load_model():
               'mlflow run ' + path + ' -P config=mlflow_model_config.json --env-manager=local'
     # command = 'mlflow run ' + repo_url + ' --version ' + branch_name
     print(command)
-    cmd(command)
+    pid = cmd(command)
     service_url = ''
     cnt = 0
     while cnt < 30:
@@ -487,6 +489,7 @@ def load_model():
         for i in range(0, len(model_names)):
             key = key + '/' + model_names[i] + '/' + model_versions[i]
         service_url_dict[key] = service_url
+        service_process_pid_dict[key] = pid
     f.close()
     return JsonResponse.success(data=service_url).to_dict()
 
@@ -497,6 +500,27 @@ def test():
     print(request.json)
     print('---------------------------------------------')
     return JsonResponse.success(request.json).to_dict()
+
+
+@app.route('/tes2', methods=['POST'])
+def test2():
+    print('---------------------------------------------')
+    print('---------------------------------------------')
+    return JsonResponse.success(str(service_process_pid_dict)+str(service_url_dict)).to_dict()
+
+
+@app.route('/close_service', methods=['POST'])
+def close_service():
+    key = request.json('service_key')
+    if service_process_pid_dict[key] is None:
+        return '没有 ' + key + ' 这个进程'
+    pid = service_process_pid_dict[key]
+    os.kill(pid, signal.SIGKILL)
+    service_process_pid_dict[key] = None
+    service_url_dict[key] = None
+    return key + '已经关闭'
+
+
 
 
 if __name__ == '__main__':
