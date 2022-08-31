@@ -1,4 +1,6 @@
+import os
 import threading
+import time
 from socket import *
 
 lock = threading.Lock()  # 确保 多个线程在共享资源的时候不会出现脏数据
@@ -29,8 +31,16 @@ def portscanner(host, ports):
 
 
 if __name__ == '__main__':
-    ip = '127.0.0.1'
-    # main(ip,[22,101,8080,8000])          # 输入端口扫描
-    # main(ip)
-
-    portscanner(ip,ports=range(43000,65535))
+    # ip = '127.0.0.1'
+    # # main(ip,[22,101,8080,8000])          # 输入端口扫描
+    # # main(ip)
+    #
+    # portscanner(ip,ports=range(43000,65535))
+    cnt = 0
+    while cnt <= 30:
+        print(cnt)
+        cnt += 1
+        if os.path.exists('/' + 'mlflow_output'):
+            break
+        else:
+            time.sleep(5)

@@ -68,7 +68,6 @@ def cmd(command):
     :return:
     """
     print(command)
-    subp = None
     try:
         subp = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding="utf-8")
         # subp.wait()

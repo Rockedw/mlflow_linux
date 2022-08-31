@@ -478,7 +478,9 @@ def load_model():
     pid = cmd(command)
     service_url = ''
     cnt = 0
-    while cnt < 30:
+    while cnt <= 30:
+        print(cnt)
+        cnt += 1
         if os.path.exists(path + '/' + 'mlflow_output'):
             break
         else:
@@ -506,7 +508,7 @@ def test():
 def test2():
     print('---------------------------------------------')
     print('---------------------------------------------')
-    return JsonResponse.success(str(service_process_pid_dict)+str(service_url_dict)).to_dict()
+    return JsonResponse.success(str(service_process_pid_dict) + str(service_url_dict)).to_dict()
 
 
 @app.route('/close_service', methods=['POST'])
@@ -519,8 +521,6 @@ def close_service():
     service_process_pid_dict[key] = None
     service_url_dict[key] = None
     return key + '已经关闭'
-
-
 
 
 if __name__ == '__main__':
