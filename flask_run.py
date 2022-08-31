@@ -1,5 +1,7 @@
 # -*- coding: UTF-8 -*-
 import stat
+import time
+
 import boto3
 import mlflow
 from flask import Flask, request
@@ -13,6 +15,7 @@ from config import Config
 from util_methods import cmd, download_directory, rmtree, scan_dir, portscanner
 import shutil
 import json
+from time import sleep
 from JsonResponse import JsonResponse
 import pickle
 
@@ -467,18 +470,25 @@ def load_model():
               'cd ' + path + ' && ' + \
               'rm -rf .git &&' + \
               'cd ' + cwd + ' && ' + \
-              'mlflow run ' + path + ' -P config=./mlflow_model_config.json --env-manager=local'
+              'mlflow run ' + path + ' -P config=mlflow_model_config.json --env-manager=local'
     # command = 'mlflow run ' + repo_url + ' --version ' + branch_name
     print(command)
     cmd(command)
     service_url = ''
-    with open(path + '/' + 'mlflow_output') as f:
-        service_url = f.readline()
-        key = repo_name + '/' + branch_name
-        for i in range(0, len(model_names)):
-            key = key + '/' + model_names[i] + '/' + model_versions[i]
-        service_url_dict[key] = service_url
-    f.close()
+    cnt = 0
+    while cnt < 30:
+        try:
+            with open(path + '/' + 'mlflow_output') as f:
+                service_url = f.readline()
+                key = repo_name + '/' + branch_name
+                for i in range(0, len(model_names)):
+                    key = key + '/' + model_names[i] + '/' + model_versions[i]
+                service_url_dict[key] = service_url
+            f.close()
+            break
+        except Exception as e:
+            time.sleep(5)
+
     return JsonResponse.success(data=service_url).to_dict()
 
 

@@ -71,15 +71,16 @@ def cmd(command):
     subp = None
     try:
         subp = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding="utf-8")
-        subp.wait()
-        print(subp.communicate()[1])
+        # subp.wait()
+        # print(subp.communicate()[1])
     except Exception as e:
         print(str(e))
-
-    if subp.poll() == 0:
         print(subp.communicate()[1])
-    else:
-        print("失败")
+
+    # if subp.poll() == 0:
+    #     print(subp.communicate()[1])
+    # else:
+    #     print("失败")
 
 
 def scan_dir(path, head: dict = None):
