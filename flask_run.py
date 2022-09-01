@@ -443,7 +443,7 @@ def load_model():
     for i in range(0, len(model_names)):
         key = key + '/' + model_names[i] + '/' + str(model_versions[i])
     if key in service_url_dict:
-        return service_url_dict[key]
+        return JsonResponse.success(data=service_url_dict[key]).to_dict()
 
     branches, temp_version = query_branches_by_repo_name_and_owner(owner_name=owner_name,
                                                                    repo_name=repo_name,
@@ -513,9 +513,9 @@ def test2():
 def request_service_url():
     post_data = request.json
     service_url = post_data.get('service_url')
-    data = post_data.get('data')
-    res = requests.post(url=service_url, data=data)
-    return JsonResponse.success(data=res.json()).to_dict()
+
+    res = requests.post(url=service_url, json=post_data)
+    return JsonResponse.success(data=res.text).to_dict()
 
 
 @app.route('/close_service', methods=['POST'])
