@@ -1,4 +1,5 @@
 import stat
+import threading
 from socket import socket, AF_INET, SOCK_STREAM
 
 import boto3
@@ -102,15 +103,18 @@ def scan_dir(path, head: dict = None):
     return head
 
 
-def portscanner(host='127.0.0.1', ports=range(40000, 41000)):
-    for port in ports:
-        try:
-            s = socket(AF_INET, SOCK_STREAM)
-            s.connect((host, port))
-            s.close()
-        except:
-            print(f"{port} open")
-            return port
+def portscanner(already_used_ports, lock: threading.Lock, host='127.0.0.1', ports=range(40000, 41000)):
+    with lock:
+        for port in ports:
+            if port not in already_used_ports:
+                try:
+                    s = socket(AF_INET, SOCK_STREAM)
+                    s.connect((host, port))
+                    s.close()
+                except:
+                    print(f"{port} open")
+                    already_used_ports.append(port)
+                    return port
 
 
 if __name__ == '__main__':

@@ -14,6 +14,7 @@ from util_methods import cmd, download_directory, rmtree, scan_dir, portscanner
 import shutil
 import json
 from JsonResponse import JsonResponse
+import threading
 
 pymysql.install_as_MySQLdb()
 
@@ -22,7 +23,7 @@ CORS(app, resources=r'/*')
 db = SQLAlchemy(app)
 
 app.config.from_object(Config)
-
+lock = threading.Lock()
 bucket_name = Config.bucket_name
 access_key = Config.access_key
 secret_key = Config.secret_key
@@ -30,6 +31,7 @@ endpoint_url = Config.endpoint_url
 git_url = Config.git_url
 service_url_dict = {}
 service_process_pid_dict = {}
+already_used_ports = []
 
 
 class Repository(db.Model):
@@ -134,6 +136,7 @@ def query_all_project():
     except Exception as e:
         projects = []
     res = []
+    index = 0
     for project in projects:
         repo = Repository.query.filter_by(id=project.repo_id).all()[0]
         repo_name = repo.repo_name
@@ -141,10 +144,11 @@ def query_all_project():
         update_time = repo.update_time
         temp = get_project_relation_by_pid(project.id)
         res.append(
-            {'project_id': project.id, 'repo_owner': repo_owner, 'repo_name': repo_name,
+            {'index': index, 'project_id': project.id, 'repo_owner': repo_owner, 'repo_name': repo_name,
              'branch_name': project.branch_name, 'model_names': temp['models'],
              'model_versions': temp['versions'], 'update_time': update_time})
-        print(res)
+        index += 1
+        # print(res)
     return JsonResponse.success(data=res).to_dict()
 
 
@@ -458,7 +462,7 @@ def load_model():
     cmd(command)
     config_json = {}
     model_local_paths = []
-    port = portscanner()
+    port = portscanner(already_used_ports=already_used_ports, lock=lock)
     path = version + '/' + repo_name
     for i in range(0, len(model_names)):
         local_path = download_directory(download_path=get_model_source(model_names[i], version=model_versions[i]))
@@ -509,12 +513,12 @@ def test2():
     return JsonResponse.success(str(service_process_pid_dict) + str(service_url_dict)).to_dict()
 
 
-@app.route('/request_service_url', methods=['POST'])
-def request_service_url():
+@app.route('/request_service', methods=['POST'])
+def request_service():
     post_data = request.json
     service_url = post_data.get('service_url')
 
-    res = requests.post(url=service_url, json=post_data)
+    res = requests.post(url=service_url, json=json.dumps(post_data))
     return JsonResponse.success(data=res.text).to_dict()
 
 
