@@ -458,7 +458,7 @@ def load_model():
     if not os.path.exists(version):
         return JsonResponse.error(data='没有对应的代码仓库').to_dict()
     cwd = os.getcwd()
-    command = 'cd ' + cwd + ' && ' + 'cd ' + version + ' && ' + 'git checkout ' + branch_name
+    command = 'cd ' + cwd + ' && ' + 'cd ' + version + '/'+repo_name+' && ' + 'git checkout ' + branch_name
     cmd(command)
     config_json = {}
     model_local_paths = []

@@ -11,7 +11,7 @@ def transform(model_path):
 
 
 if __name__ == "__main__":
-    model_path = r'D:\MRC_Competition_Dureader-master\main\models\chinese-macbert-large'
+    model_path = r'D:\MRC_Competition_Dureader-master\main\models\mrc_roberta_wwm_ext_large'
     print(1)
     mlflow.tracking.set_tracking_uri('http://39.105.6.98:43082')
     print(2)
@@ -19,7 +19,7 @@ if __name__ == "__main__":
     print(3)
     artifact_uri = mlflow.get_artifact_uri()
     print("Artifact uri: {}".format(artifact_uri))
-    mv = mlflow.register_model(artifact_uri, "chinese-macbert-large")
+    mv = mlflow.register_model(artifact_uri, "mrc_roberta_wwm_ext_large")
     print("Name: {}".format(mv.name))
     print("Version: {}".format(mv.version))
     # with open('s3://models/0/3de4bc5ed26348229ce9bd8a19472817/artifacts/model/conda.yaml') as f:
