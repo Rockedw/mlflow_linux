@@ -10,11 +10,13 @@ import pymysql
 import os
 from git import Repo
 from config import Config
-from util_methods import cmd, download_directory, rmtree, scan_dir, portscanner
+from util_methods import cmd, download_directory, rmtree, scan_dir, portscanner, kill_port
 import shutil
 import json
 from JsonResponse import JsonResponse
 import threading
+import time
+from flask_apscheduler import APScheduler
 
 pymysql.install_as_MySQLdb()
 
@@ -23,12 +25,17 @@ CORS(app, resources=r'/*')
 db = SQLAlchemy(app)
 
 app.config.from_object(Config)
+scheduler = APScheduler()
+scheduler.init_app(app)
+scheduler.start()
 lock = threading.Lock()
+service_lock = threading.Lock()
 bucket_name = Config.bucket_name
 access_key = Config.access_key
 secret_key = Config.secret_key
 endpoint_url = Config.endpoint_url
 git_url = Config.git_url
+service_port_dict = {}
 service_url_dict = {}
 service_process_pid_dict = {}
 already_used_ports = []
@@ -149,6 +156,29 @@ def query_all_project():
              'model_versions': temp['versions'], 'update_time': update_time})
         index += 1
         # print(res)
+    return JsonResponse.success(data=res).to_dict()
+
+
+@app.route('/query_all_owner')
+def query_all_owner():
+    repos = Repository.query.all()
+    owners = []
+    for repo in repos:
+        if repo.repo_owner not in owners:
+            owners.append(repo.owner_name)
+    return JsonResponse.success(data=owners).to_dict()
+
+
+@app.route('/query_repo_by_owner',methods=['POST'])
+def query_repo_by_owner():
+    data = request.json
+    owner = data.get('owner_name')
+    repos = Repository.query.filter_by(owner_name=owner).all()
+    res = []
+    for repo in repos:
+        res.append(
+            {'id': repo.id, 'owner_name': repo.owner_name, 'repo_name': repo.repo_name, 'lower_name': repo.lower_name,
+             'update_time': repo.update_time})
     return JsonResponse.success(data=res).to_dict()
 
 
@@ -446,9 +476,11 @@ def load_model():
     key = repo_name + '/' + branch_name
     for i in range(0, len(model_names)):
         key = key + '/' + model_names[i] + '/' + str(model_versions[i])
-    if key in service_url_dict:
+    service_lock.acquire(blocking=True, timeout=60.0)
+    if key in service_url_dict and key in service_port_dict:
+        service_port_dict[key][1] = int(time.time())
         return JsonResponse.success(data=service_url_dict[key]).to_dict()
-
+    service_lock.release()
     branches, temp_version = query_branches_by_repo_name_and_owner(owner_name=owner_name,
                                                                    repo_name=repo_name,
                                                                    update_time=update_time
@@ -458,7 +490,7 @@ def load_model():
     if not os.path.exists(version):
         return JsonResponse.error(data='没有对应的代码仓库').to_dict()
     cwd = os.getcwd()
-    command = 'cd ' + cwd + ' && ' + 'cd ' + version + '/'+repo_name+' && ' + 'git checkout ' + branch_name
+    command = 'cd ' + cwd + ' && ' + 'cd ' + version + '/' + repo_name + ' && ' + 'git checkout ' + branch_name
     cmd(command)
     config_json = {}
     model_local_paths = []
@@ -491,9 +523,12 @@ def load_model():
         else:
             time.sleep(5)
     with open(path + '/' + 'mlflow_output') as f:
+        service_lock.acquire()
         service_url = f.readline()
         service_url_dict[key] = service_url
         service_process_pid_dict[key] = pid
+        service_port_dict[key] = (port, int(time.time()))
+        service_lock.release()
     f.close()
     return JsonResponse.success(data=service_url).to_dict()
 
@@ -525,13 +560,32 @@ def request_service():
 @app.route('/close_service', methods=['POST'])
 def close_service():
     key = request.json('service_key')
-    if key not in service_process_pid_dict or service_process_pid_dict['key'] is None:
-        return '没有 ' + key + ' 这个进程'
-    pid = service_process_pid_dict[key]
-    os.kill(pid, signal.SIGKILL)
-    service_process_pid_dict[key] = None
-    service_url_dict[key] = None
+    try:
+        pid = service_process_pid_dict[key]
+        port = service_port_dict[key][0]
+        os.kill(pid, signal.SIGKILL)
+        kill_port(port)
+        already_used_ports.remove(port)
+    finally:
+        del service_process_pid_dict[key]
+        del service_url_dict[key]
+        del service_port_dict[key]
     return key + '已经关闭'
+
+
+@scheduler.task('interval', id='auto_close_service', seconds=600)
+def auto_close_service():
+    service_lock.acquire()
+    current_time = int(time.time())
+    for k, v in service_port_dict.items():
+        t = v[1]
+        if current_time - t >= 600:
+            del service_port_dict[k]
+            del service_url_dict[k]
+            del service_process_pid_dict[k]
+            already_used_ports.remove(v[0])
+    service_lock.release()
+    print("定时清理服务")
 
 
 if __name__ == '__main__':

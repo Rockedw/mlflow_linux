@@ -117,6 +117,12 @@ def portscanner(already_used_ports, lock: threading.Lock, host='127.0.0.1', port
                     return port
 
 
+def kill_port(port):
+    command = '''kill -9 $(netstat -nlp | grep :''' + str(port) + '''| awk '{print $7}' | awk -F"/" '{ print $1 
+        }') '''
+    os.system(command)
+
+
 if __name__ == '__main__':
     # path = r'C:/Users/wangyan/PycharmProjects/MLFlow/repos'
     # head = scan_dir(path)
