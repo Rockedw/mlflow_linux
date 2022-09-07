@@ -9,6 +9,9 @@ from flask_sqlalchemy import SQLAlchemy
 import pymysql
 import os
 from git import Repo
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
 from config import Config
 from util_methods import cmd, download_directory, rmtree, scan_dir, portscanner, kill_port
 import shutil
@@ -164,12 +167,12 @@ def query_all_owner():
     repos = Repository.query.all()
     owners = []
     for repo in repos:
-        if repo.repo_owner not in owners:
+        if repo.owner_name not in owners:
             owners.append(repo.owner_name)
     return JsonResponse.success(data=owners).to_dict()
 
 
-@app.route('/query_repo_by_owner',methods=['POST'])
+@app.route('/query_repo_by_owner', methods=['POST'])
 def query_repo_by_owner():
     data = request.json
     owner = data.get('owner_name')
@@ -533,6 +536,45 @@ def load_model():
     return JsonResponse.success(data=service_url).to_dict()
 
 
+@app.route('/create_project', methods=['POST'])
+def create_project():
+    data = request.json
+    owner_name = data.get('owner_name')
+    repo_name = data.get('repo_name')
+    branch_name = data.get('branch_name')
+    model_list = data.get('model_list')
+    repo = Repository.query.filter_by(owner_name=owner_name, repo_name=repo_name).first()
+    repo_id = repo.id
+    project = Project(repo_id=repo_id, branch_name=branch_name)
+    db.session.add(project)
+    db.session.flush()
+    project_id = project.id
+    for model in model_list:
+        project_relation = ProjectRelation(project_id=project_id, model_name=model[0], model_version=int(model[1]))
+        db.session.add(project_relation)
+    try:
+        db.session.commit()
+        return JsonResponse.success(data='success').to_dict()
+    except Exception as e:
+        print(e)
+        db.session.rollback()
+        return JsonResponse.error().to_dict()
+
+
+@app.route('/delete_project_by_project_id', methods=['POST'])
+def delete_project_by_project_id():
+    data = request.json
+    project_id = data.get('project_id')
+    db.session.query(Project).filter(Project.id == project_id).delete()
+    db.session.query(ProjectRelation).filter(ProjectRelation.project_id == project_id).delete()
+    try:
+        db.session.commit()
+        return JsonResponse.success(data='success').to_dict()
+    except Exception as e:
+        print(e)
+        db.session.rollback()
+
+
 @app.route('/test', methods=['POST'])
 def test():
     print('---------------------------------------------')
@@ -579,11 +621,15 @@ def auto_close_service():
     current_time = int(time.time())
     for k, v in service_port_dict.items():
         t = v[1]
+        port = v[0]
         if current_time - t >= 600:
-            del service_port_dict[k]
-            del service_url_dict[k]
-            del service_process_pid_dict[k]
-            already_used_ports.remove(v[0])
+            try:
+                kill_port(port)
+            finally:
+                del service_port_dict[k]
+                del service_url_dict[k]
+                del service_process_pid_dict[k]
+                already_used_ports.remove(v[0])
     service_lock.release()
     print("定时清理服务")
 
@@ -592,7 +638,11 @@ if __name__ == '__main__':
     # p1 = pickle.dumps(app)
     # print('================================')
     # print(p1)
-    app.run(host='0.0.0.0', port=8081, debug=False)
-
+    app.run(host='0.0.0.0', port=8086, debug=False)
+    # project = Project(repo_id=1, branch_name='master')
+    # print(db.session.add(project))
+    # db.session.flush()
+    # print(db.session.commit())
+    # print(project.id)
     # get_model_source('mini_model', 1)
     # print(download_directory('s3://models/0/48213a12f43f448ea97a11f2f67ec0e0/artifacts'))

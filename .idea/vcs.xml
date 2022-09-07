@@ -5,9 +5,29 @@
     <mapping directory="$PROJECT_DIR$/repos/rock/1" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/repos/rock/haha" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/repos/rock/mrc" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/repos/rock/mrc1" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/repos/rock/mrc_demo" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/repos/rock/second_repo" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/temp/repos/rock/haha/0/haha" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/temp/repos/rock/mrc/0/mrc" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/temp/repos/rock/mrc1/0/mrc1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/temp/repos/rock/mrc1/1/mrc1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/temp/repos/rock/mrc1/10/mrc1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/temp/repos/rock/mrc1/11/mrc1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/temp/repos/rock/mrc1/12/mrc1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/temp/repos/rock/mrc1/13/mrc1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/temp/repos/rock/mrc1/14/mrc1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/temp/repos/rock/mrc1/15/mrc1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/temp/repos/rock/mrc1/16/mrc1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/temp/repos/rock/mrc1/17/mrc1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/temp/repos/rock/mrc1/18/mrc1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/temp/repos/rock/mrc1/2/mrc1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/temp/repos/rock/mrc1/3/mrc1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/temp/repos/rock/mrc1/4/mrc1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/temp/repos/rock/mrc1/5/mrc1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/temp/repos/rock/mrc1/6/mrc1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/temp/repos/rock/mrc1/7/mrc1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/temp/repos/rock/mrc1/8/mrc1" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/temp/repos/rock/mrc1/9/mrc1" vcs="Git" />
   </component>
 </project>
