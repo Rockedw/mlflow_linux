@@ -530,7 +530,7 @@ def load_model():
         service_url = f.readline()
         service_url_dict[key] = service_url
         service_process_pid_dict[key] = pid
-        service_port_dict[key] = (port, int(time.time()))
+        service_port_dict[key] = [port, int(time.time())]
         service_lock.release()
     f.close()
     return JsonResponse.success(data=service_url).to_dict()
