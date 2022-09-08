@@ -639,7 +639,7 @@ if __name__ == '__main__':
     # p1 = pickle.dumps(app)
     # print('================================')
     # print(p1)
-    app.run(host='0.0.0.0', port=8086, debug=False)
+    app.run(host='0.0.0.0', port=8081, debug=False)
     # project = Project(repo_id=1, branch_name='master')
     # print(db.session.add(project))
     # db.session.flush()

@@ -5,7 +5,6 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5bebb915-b354-40e8-8c16-c8ae2fa12a3e" name="Changes" comment="9.7">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/flask_run.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_run.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -225,7 +224,7 @@
       <workItem from="1662539547324" duration="1928000" />
       <workItem from="1662604921145" duration="2042000" />
       <workItem from="1662607593001" duration="691000" />
-      <workItem from="1662610879919" duration="2558000" />
+      <workItem from="1662610879919" duration="2718000" />
     </task>
     <task id="LOCAL-00001" summary="8.26">
       <created>1661501586154</created>
@@ -381,7 +380,14 @@
       <option name="project" value="LOCAL" />
       <updated>1662540292170</updated>
     </task>
-    <option name="localTasksCounter" value="23" />
+    <task id="LOCAL-00023" summary="9.7">
+      <created>1662617542119</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1662617542119</updated>
+    </task>
+    <option name="localTasksCounter" value="24" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
