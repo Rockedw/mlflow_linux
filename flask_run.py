@@ -482,6 +482,7 @@ def load_model():
     service_lock.acquire(blocking=True, timeout=60.0)
     if key in service_url_dict and key in service_port_dict:
         service_port_dict[key][1] = int(time.time())
+        service_lock.release()
         return JsonResponse.success(data=service_url_dict[key]).to_dict()
     service_lock.release()
     branches, temp_version = query_branches_by_repo_name_and_owner(owner_name=owner_name,
