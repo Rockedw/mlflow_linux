@@ -1,5 +1,5 @@
 import os
-import mlflow.sklearn
+import mlflow
 
 os.environ["AWS_ACCESS_KEY_ID"] = "minioadmin"
 os.environ["AWS_SECRET_ACCESS_KEY"] = "minioadmin"

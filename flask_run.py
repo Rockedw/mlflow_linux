@@ -42,6 +42,7 @@ service_port_dict = {}
 service_url_dict = {}
 service_process_pid_dict = {}
 already_used_ports = []
+env_dict = []
 
 
 class Repository(db.Model):
@@ -528,11 +529,13 @@ def load_model():
             time.sleep(5)
     with open(path + '/' + 'mlflow_output') as f:
         service_lock.acquire()
-        service_url = f.readline()
-        service_url_dict[key] = service_url
-        service_process_pid_dict[key] = pid
-        service_port_dict[key] = [port, int(time.time())]
-        service_lock.release()
+        try:
+            service_url = f.readline()
+            service_url_dict[key] = service_url
+            service_process_pid_dict[key] = pid
+            service_port_dict[key] = [port, int(time.time())]
+        finally:
+            service_lock.release()
     f.close()
     return JsonResponse.success(data=service_url).to_dict()
 
@@ -555,11 +558,95 @@ def create_project():
         db.session.add(project_relation)
     try:
         db.session.commit()
+        if project_id not in env_dict:
+            env_dict.append(project_id)
         return JsonResponse.success(data='success').to_dict()
     except Exception as e:
         print(e)
         db.session.rollback()
         return JsonResponse.error().to_dict()
+
+
+@app.route('/create_env', methods=['POST'])
+def create_env():
+    data = request.json
+    owner_name = data.get('repo_owner')
+    repo_name = data.get('repo_name')
+    branch_name = data.get('branch_name')
+    update_time = 0
+    model_names: list = data.get('model_names')
+    model_versions: list = data.get('model_versions')
+    project_id = data.get('project_id')
+    for i in range(0, 10):
+        if int(project_id) not in env_dict:
+            time.sleep(1)
+        else:
+            break
+    if int(project_id) not in env_dict:
+        return JsonResponse.error().to_dict()
+    print(data)
+    key = repo_name + '/' + branch_name
+    for i in range(0, len(model_names)):
+        key = key + '/' + model_names[i] + '/' + str(model_versions[i])
+    service_lock.acquire(blocking=True, timeout=60.0)
+    if key in service_url_dict and key in service_port_dict:
+        service_port_dict[key][1] = int(time.time())
+        service_lock.release()
+        return JsonResponse.success(data=service_url_dict[key]).to_dict()
+    service_lock.release()
+    branches, temp_version = query_branches_by_repo_name_and_owner(owner_name=owner_name,
+                                                                   repo_name=repo_name,
+                                                                   update_time=update_time
+                                                                   )
+    print('branches:' + str(branches))
+    version = './temp/repos/' + owner_name + '/' + repo_name + '/' + temp_version
+    if not os.path.exists(version):
+        return JsonResponse.error(data='没有对应的代码仓库').to_dict()
+    cwd = os.getcwd()
+    command = 'cd ' + cwd + ' && ' + 'cd ' + version + '/' + repo_name + ' && ' + 'git checkout ' + branch_name
+    cmd(command)
+    config_json = {}
+    model_local_paths = []
+    port = portscanner(already_used_ports=already_used_ports, lock=lock)
+    path = version + '/' + repo_name
+    for i in range(0, len(model_names)):
+        local_path = download_directory(download_path=get_model_source(model_names[i], version=model_versions[i]))
+        model_local_paths.append(local_path)
+        config_json[model_names[i]] = local_path
+        config_json['port'] = port
+    with open(path + '/mlflow_model_config.json', 'w') as f:
+        f.write(json.dumps(config_json))
+    f.close()
+    command = 'cd ' + cwd + ' && ' + \
+              'cd ' + path + ' && ' + \
+              'rm -rf .git &&' + \
+              'cd ' + cwd + ' && ' + \
+              'mlflow run ' + path + ' -P config=mlflow_model_config.json'
+    # command = 'mlflow run ' + repo_url + ' --version ' + branch_name
+    print(command)
+    pid = cmd(command)
+    # cmd(command)
+    service_url = ''
+    cnt = 0
+    while cnt <= 30:
+        print(cnt)
+        cnt += 1
+        if os.path.exists(path + '/' + 'mlflow_output'):
+            break
+        else:
+            time.sleep(5)
+    env_dict.remove(project_id)
+    with open(path + '/' + 'mlflow_output') as f:
+        service_lock.acquire()
+        try:
+            service_url = f.readline()
+            service_url_dict[key] = service_url
+            service_process_pid_dict[key] = pid
+            service_port_dict[key] = [port, int(time.time())]
+        finally:
+            service_lock.release()
+    f.close()
+    return JsonResponse.success(data=service_url).to_dict()
 
 
 @app.route('/delete_project_by_project_id', methods=['POST'])
