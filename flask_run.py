@@ -1,8 +1,11 @@
 # -*- coding: UTF-8 -*-
+import datetime
+import logging
 import signal
 import time
 
 import requests
+import yaml
 from flask import Flask, request
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
@@ -11,15 +14,17 @@ import os
 from git import Repo
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from werkzeug.utils import secure_filename
 
 from config import Config
-from util_methods import cmd, download_directory, rmtree, scan_dir, portscanner, kill_port
+from util_methods import cmd, download_directory, rmtree, scan_dir, portscanner, kill_port, upload_model
 import shutil
 import json
 from JsonResponse import JsonResponse
 import threading
 import time
 from flask_apscheduler import APScheduler
+from hdfs.client import Client
 
 pymysql.install_as_MySQLdb()
 
@@ -28,6 +33,7 @@ CORS(app, resources=r'/*')
 db = SQLAlchemy(app)
 
 app.config.from_object(Config)
+app.config['UPLOAD_FOLDER'] = Config.UPLOAD_FOLDER
 scheduler = APScheduler()
 scheduler.init_app(app)
 scheduler.start()
@@ -44,6 +50,8 @@ service_process_pid_dict = {}
 already_used_ports = []
 env_dict = []
 
+hdfs_client = Client(Config.HDFS_URL)
+
 
 class Repository(db.Model):
     """
@@ -59,16 +67,25 @@ class Repository(db.Model):
     update_time = db.Column('updated_unix', db.Integer)
 
 
+# class Model(db.Model):
+#     """
+#     模型
+#     """
+#     __tablename__ = 'model_versions'
+#     __bind_key__ = 'mlflow'
+#     name = db.Column('name', db.String(256), primary_key=True)
+#     version = db.Column('version', db.Integer, primary_key=True)
+#     source = db.Column('source', db.String(255))
+#     create_time = db.Column('creation_time', db.Integer)
+
 class Model(db.Model):
-    """
-    模型
-    """
-    __tablename__ = 'model_versions'
+    __tablename__ = 'model'
     __bind_key__ = 'mlflow'
-    name = db.Column('name', db.String(256), primary_key=True)
-    version = db.Column('version', db.Integer, primary_key=True)
-    source = db.Column('source', db.String(500))
-    create_time = db.Column('creation_time', db.Integer)
+    id = db.Column(db.Integer, primary_key=True, index=True)
+    model_name = db.Column('model_name', db.String(255))
+    version = db.Column('version', db.Integer)
+    model_hdfs_path = db.Column('model_hdfs_path', db.String(255))
+    update_time = db.Column('update_time', db.Integer)
 
 
 class Task(db.Model):
@@ -105,8 +122,20 @@ class ProjectRelation(db.Model):
     __bind_key__ = 'mlflow'
     id = db.Column('id', db.Integer, primary_key=True, index=True)
     project_id = db.Column('project_id', db.Integer)
-    model_name = db.Column('model_name', db.String(500))
+    model_name = db.Column('model_name', db.String(255))
     model_version = db.Column('model_version', db.Integer)
+
+
+class Module(db.Model):
+    __tablename__ = 'module'
+    __bind_key__ = 'mlflow'
+    id = db.Column('id', db.Integer, primary_key=True, index=True)
+    repo_id = db.Column('repo_id', db.Integer)
+    branch_name = db.Column('branch_name', db.String(255))
+    model_name = db.Column('model_name', db.String(255))
+    model_hdfs_path = db.Column('model_hdfs_path', db.String(255))
+    model_version = db.Column('model_version', db.Integer)
+    model_update_time = db.Column('model_update_time', db.Integer)
 
 
 #
@@ -649,6 +678,212 @@ def create_env():
     return JsonResponse.success(data=service_url).to_dict()
 
 
+def create_update_model(model_hdfs_path: str, update_time):
+    model_name = model_hdfs_path.split('/')[-1]
+    saved_model_path = '/temp/models/' + model_name + '/' + update_time
+    model = Model.query.filter_by(model_hdfs_path=model_hdfs_path).order_by(Model.version.desc()).first()
+    if model is not None:
+        next_version = model.version + 1
+    else:
+        next_version = 1
+    model2 = Model.query.filter_by(model_hdfs_path=model_hdfs_path, update_time=update_time).one()
+    if not os.path.exists(saved_model_path):
+        print('下载模型')
+        try:
+            hdfs_client.download(model_hdfs_path, saved_model_path)
+        except Exception as e:
+            print(e)
+            print('下载失败')
+    if model2 is None:
+        db.session.add(Model(model_name=model_name, model_hdfs_path=model_hdfs_path, version=next_version,
+                             update_time=update_time))
+    else:
+        print('该模型已存在')
+        return model2.version
+    db.session.flush()
+    try:
+        db.session.commit()
+        return next_version
+    except:
+        db.session.rollback()
+        return -1
+
+
+def create_module(repo_id, branch_name, model_hdfs_path, model_update_time, model_version):
+    db.session.add(Module(repo_id=repo_id, branch_name=branch_name, model_hdfs_path=model_hdfs_path,
+                          model_update_time=model_update_time, model_version=model_version))
+    db.session.flush()
+    try:
+        db.session.commit()
+        return True
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        return False
+
+
+@app.route('/create_module')
+def create_module():
+    data = request.json
+    config_hdfs_path = data.get('config_hdfs_path')
+    try:
+        hdfs_client.status(hdfs_path=config_hdfs_path, strict=False)['modificationTime']
+    except:
+        return JsonResponse.error(data='没有对应的配置文件').to_dict()
+    try:
+        local_path = './temp/module/config/' + config_hdfs_path
+        hdfs_client.download(hdfs_path=config_hdfs_path, local_path=local_path)
+        # 读取yaml文件中的hdfs_path和git_path
+        with open(local_path + 'project.yaml', 'r') as f:
+            config = yaml.load(f, Loader=yaml.FullLoader)
+        f.close()
+        model_hdfs_path = config['model_hdfs_path']
+        git_path = config['git_path']
+        branch_name = config['branch']
+        # 从git_path中获取repo_name和branch_name
+        repo_name = git_path.split('/')[-1]
+        owner_name = git_path.split('/')[-2]
+        try:
+            update_time = hdfs_client.status(hdfs_path=model_hdfs_path, strict=False)['modificationTime']
+            version = create_update_model(model_hdfs_path=model_hdfs_path, update_time=update_time)
+            repo = Repository.query.filter_by(repo_name=repo_name, owner_name=owner_name).first()
+            if repo is None:
+                return JsonResponse.error(data='没有对应的代码仓库').to_dict()
+            repo_id = repo.id
+            if version != -1:
+                if create_module(repo_id=repo_id, branch_name=branch_name, model_hdfs_path=model_hdfs_path,
+                                 model_update_time=update_time, model_version=version):
+                    return JsonResponse.success(data='创建module成功').to_dict()
+                else:
+                    return JsonResponse.error(data='创建module失败').to_dict()
+            else:
+                return JsonResponse.error(data='创建模型失败').to_dict()
+        except:
+            return JsonResponse.error(data='创建module失败').to_dict()
+    except:
+        return JsonResponse.error(data='创建module失败').to_dict()
+
+
+@app.route('/query_all_module')
+def query_all_module():
+    modules = Module.query.all()
+    data = []
+    for module in modules:
+        data.append(module.to_dict())
+    return JsonResponse.success(data=data).to_dict()
+
+@app.route('/delete_module_by_id')
+def delete_module_by_id():
+    data = request.json
+    module_id = data.get('module_id')
+    module = Module.query.filter_by(id=module_id).first()
+    if module is None:
+        return JsonResponse.error(data='没有对应的module').to_dict()
+    db.session.delete(module)
+    db.session.flush()
+    try:
+        db.session.commit()
+        return JsonResponse.success(data='删除module成功').to_dict()
+    except:
+        db.session.rollback()
+        return JsonResponse.error(data='删除module失败').to_dict()
+
+
+@app.route('/run_module', methods=['POST'])
+def run_module():
+    data = request.json
+    module_id = data.get('module_id')
+    module = Module.query.filter_by(id=module_id).first()
+    if module is None:
+        return JsonResponse.error(data='没有对应的module').to_dict()
+    repo_id = module.repo_id
+    branch_name = module.branch_name
+    model_hdfs_path = module.model_hdfs_path
+    model_update_time = module.model_update_time
+    model_version = module.model_version
+    model = Model.query.filter_by(model_hdfs_path=model_hdfs_path, update_time=model_update_time,
+                                  version=model_version).first()
+    if model is None:
+        return JsonResponse.error(data='没有对应的model').to_dict()
+    saved_model_path = '/temp/models/' + model.name + '/' + model.update_time
+    if not os.path.exists(saved_model_path):
+        hdfs_client.download(model_hdfs_path, saved_model_path)
+
+    repo = Repository.query.filter_by(id=repo_id).first()
+    if repo is None:
+        return JsonResponse.error(data='没有对应的代码仓库').to_dict()
+    repo_name = repo.repo_name
+    owner_name = repo.owner_name
+    repo_update_time = repo.update_time
+    key = repo_name + '/' + branch_name + '/' + model.name + '/' + model.version
+    service_lock.acquire(blocking=True, timeout=60.0)
+    if key in service_url_dict and key in service_port_dict:
+        service_port_dict[key][1] = int(time.time())
+        service_lock.release()
+        return JsonResponse.success(data=service_url_dict[key]).to_dict()
+    service_lock.release()
+
+    branches, temp_version = query_branches_by_repo_name_and_owner(owner_name=owner_name,
+                                                                   repo_name=repo_name,
+                                                                   update_time=repo_update_time
+                                                                   )
+    print('branches:' + str(branches))
+    version = './temp/repos/' + owner_name + '/' + repo_name + '/' + temp_version
+    if not os.path.exists(version):
+        return JsonResponse.error(data='没有对应的代码仓库').to_dict()
+    cwd = os.getcwd()
+    command = 'cd ' + cwd + ' && ' + 'cd ' + version + '/' + repo_name + ' && ' + 'git checkout ' + branch_name
+    cmd(command)
+    config_json = {}
+    model_local_paths = []
+    port = portscanner(already_used_ports=already_used_ports, lock=lock)
+    path = version + '/' + repo_name
+
+    model_local_paths.append(saved_model_path)
+    config_json['model_path'] = saved_model_path
+    config_json['port'] = port
+    with open(path + '/mlflow_model_config.json', 'w') as f:
+        f.write(json.dumps(config_json))
+    f.close()
+    command = 'cd ' + cwd + ' && ' + \
+              'cd ' + path + ' && ' + \
+              'rm -rf .git &&' + \
+              'cd ' + cwd + ' && ' + \
+              'mlflow run ' + path + ' -P config=mlflow_model_config.json --env-manager=local'
+    # command = 'mlflow run ' + repo_url + ' --version ' + branch_name
+    print(command)
+    pid = cmd(command)
+    # cmd(command)
+    service_url = ''
+    cnt = 0
+    while cnt <= 30:
+        print(cnt)
+        cnt += 1
+        if os.path.exists(path + '/' + 'mlflow_output'):
+            break
+        else:
+            time.sleep(5)
+    with open(path + '/' + 'mlflow_output') as f:
+        service_lock.acquire()
+        try:
+            service_url = f.readline()
+            service_url_dict[key] = service_url
+            service_process_pid_dict[key] = pid
+            service_port_dict[key] = [port, int(time.time())]
+        finally:
+            service_lock.release()
+    f.close()
+    return JsonResponse.success(data=service_url).to_dict()
+
+
+# @app.route('/create_project', methods=['POST'])
+# def create_project():
+#     data = request.json
+#     config_hdfs_path = data.get('config_hdfs_path')
+#     try:
+#         hdfs_client.download(hdfs_path=config_hdfs_path, local_path='./temp/project/config/' + config_hdfs_path)
+
+
 @app.route('/delete_project_by_project_id', methods=['POST'])
 def delete_project_by_project_id():
     data = request.json
@@ -661,6 +896,15 @@ def delete_project_by_project_id():
     except Exception as e:
         print(e)
         db.session.rollback()
+        return JsonResponse.error(data='error').to_dict()
+
+
+# @app.route(/get_all_hdfs_model', methods=['GET'])
+# def get_all_hdfs_model():
+#     model_list = []
+#     models = hdfs_client.list(hdfs_path='/user/wangyan/models', status=False)
+#     for model in models:
+#         return
 
 
 @app.route('/test', methods=['POST'])
@@ -720,6 +964,51 @@ def auto_close_service():
                 already_used_ports.remove(v[0])
     service_lock.release()
     print("定时清理服务")
+
+
+@app.route('/delete_model', methods=['POST'])
+def delete_model():
+    data = request.json
+    model_name = data.get('model_name')
+    model_version = data.get('model_version')
+    try:
+        db.session.query(Model).filter(Model.name == model_name and Model.version == model_version).delete()
+        return JsonResponse.success().to_dict()
+    except:
+        return JsonResponse.error().to_dict()
+
+
+@app.route('/upload_model', methods=['POST'])
+def upload_model():
+    if request.method == 'POST':
+        print(request.form)
+        file_list = request.files.getlist('file_list')
+        model_name = request.form.get('model_name')
+        upload_time = time.time()
+        save_dir = './upload/' + str(upload_time) + '/'
+        # print(file_list.filename)
+        for file in file_list:
+            if not os.path.exists(save_dir + file.filename):
+                os.makedirs(save_dir + file.filename)
+            else:
+                continue
+            os.rmdir(save_dir + file.filename)
+            print(type(file))
+            print(file.filename)
+            print()
+            file.save(save_dir + file.filename)
+        upload_model(model_path=save_dir,
+                     model_name=model_name)
+        rmtree(save_dir)
+        return JsonResponse.success().to_dict()
+
+        # model_name = request.json.get('model_name')
+        # print(model_name)
+        # files = request.files.getlist("file_list")
+        # for file in files:
+        #     print(file.filename)
+        #     file.save('./upload/'+secure_filename(file.filename))
+        # return 'file uploaded successfully'
 
 
 if __name__ == '__main__':

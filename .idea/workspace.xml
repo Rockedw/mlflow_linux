@@ -5,9 +5,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5bebb915-b354-40e8-8c16-c8ae2fa12a3e" name="Changes" comment="9.8">
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/config.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/flask_run.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_run.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/predict.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/sql_model.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/upload_local_dir_to_minio.py" beforeDir="false" afterPath="$PROJECT_DIR$/upload_local_dir_to_minio.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/util_methods.py" beforeDir="false" afterPath="$PROJECT_DIR$/util_methods.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -227,6 +233,8 @@
       <workItem from="1662604921145" duration="2042000" />
       <workItem from="1662607593001" duration="691000" />
       <workItem from="1662610879919" duration="11973000" />
+      <workItem from="1662698126276" duration="34127000" />
+      <workItem from="1663560066306" duration="28497000" />
     </task>
     <task id="LOCAL-00001" summary="8.26">
       <created>1661501586154</created>

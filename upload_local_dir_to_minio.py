@@ -10,18 +10,25 @@ def transform(model_path):
     pass
 
 
+def upload_model(model_path,model_name):
+    try:
+        print(1)
+        mlflow.tracking.set_tracking_uri('http://39.105.6.98:43082')
+        print(2)
+        mlflow.log_artifacts(local_dir=model_path, artifact_path='model')
+        print(3)
+        artifact_uri = mlflow.get_artifact_uri()
+        print("Artifact uri: {}".format(artifact_uri))
+        mv = mlflow.register_model(artifact_uri, model_name)
+        print("Name: {}".format(mv.name))
+        print("Version: {}".format(mv.version))
+        return 'success'
+    except Exception as e:
+        print(e)
+        return 'fail'
+
+
 if __name__ == "__main__":
-    model_path = r'D:\MRC_Competition_Dureader-master\main\models\mrc_roberta_wwm_ext_large'
-    print(1)
-    mlflow.tracking.set_tracking_uri('http://39.105.6.98:43082')
-    print(2)
-    mlflow.log_artifacts(local_dir=model_path, artifact_path='model')
-    print(3)
-    artifact_uri = mlflow.get_artifact_uri()
-    print("Artifact uri: {}".format(artifact_uri))
-    mv = mlflow.register_model(artifact_uri, "mrc_roberta_wwm_ext_large")
-    print("Name: {}".format(mv.name))
-    print("Version: {}".format(mv.version))
     # with open('s3://models/0/3de4bc5ed26348229ce9bd8a19472817/artifacts/model/conda.yaml') as f:
     #     print(f.readline())
 

@@ -3,9 +3,14 @@ import threading
 from socket import socket, AF_INET, SOCK_STREAM
 
 import boto3
-import os
 import subprocess
 from config import Config
+import os
+import mlflow
+
+os.environ["AWS_ACCESS_KEY_ID"] = "minioadmin"
+os.environ["AWS_SECRET_ACCESS_KEY"] = "minioadmin"
+os.environ["MLFLOW_S3_ENDPOINT_URL"] = f"http://39.105.6.98:43099"
 
 bucket_name = Config.bucket_name
 access_key = Config.access_key
@@ -121,6 +126,19 @@ def kill_port(port):
     command = '''kill -9 $(netstat -nlp | grep :''' + str(port) + '''| awk '{print $7}' | awk -F"/" '{ print $1 
         }') '''
     os.system(command)
+
+
+def upload_model(model_path, model_name):
+    print(1)
+    mlflow.tracking.set_tracking_uri('http://39.105.6.98:43082')
+    print(2)
+    mlflow.log_artifacts(local_dir=model_path, artifact_path='model')
+    print(3)
+    artifact_uri = mlflow.get_artifact_uri()
+    print("Artifact uri: {}".format(artifact_uri))
+    mv = mlflow.register_model(artifact_uri, model_name)
+    print("Name: {}".format(mv.name))
+    print("Version: {}".format(mv.version))
 
 
 if __name__ == '__main__':
