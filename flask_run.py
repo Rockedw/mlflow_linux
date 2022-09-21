@@ -82,9 +82,9 @@ class Model(db.Model):
     __tablename__ = 'model'
     __bind_key__ = 'mlflow'
     id = db.Column(db.Integer, primary_key=True, index=True)
-    model_name = db.Column('model_name', db.String(255))
+    model_name = db.Column('name', db.String(255))
     version = db.Column('version', db.Integer)
-    model_hdfs_path = db.Column('model_hdfs_path', db.String(255))
+    model_hdfs_path = db.Column('hdfs_path', db.String(255))
     update_time = db.Column('update_time', db.Integer)
 
 
@@ -386,6 +386,14 @@ def query_file_by_owner_and_name_and_branch():
 
 
 @app.route('/query_all_model', methods=['GET'])
+# class Model(db.Model):
+#     __tablename__ = 'model'
+#     __bind_key__ = 'mlflow'
+#     id = db.Column(db.Integer, primary_key=True, index=True)
+#     model_name = db.Column('model_name', db.String(255))
+#     version = db.Column('version', db.Integer)
+#     model_hdfs_path = db.Column('model_hdfs_path', db.String(255))
+#     update_time = db.Column('update_time', db.Integer)
 def query_all_model():
     """
     查询所有模型
@@ -396,10 +404,10 @@ def query_all_model():
     for model in model_list:
         if model.name not in models:
             models[model.name] = [
-                {'model_version': model.version, 'model_source': model.source, 'create_time': model.create_time}]
+                {'version': model.version, 'hdfs_path': model.hdfs_path, 'update_time': model.update_time}]
         else:
             models[model.name].append(
-                {'model_version': model.version, 'model_source': model.source, 'create_time': model.create_time})
+                {'version': model.version, 'hdfs_path': model.hdfs_path, 'update_time': model.update_time})
     return JsonResponse.success(data=models).to_dict()
 
 
@@ -734,7 +742,7 @@ def create_module():
         local_path = './temp/module/config/' + config_hdfs_path
         hdfs_client.download(hdfs_path=config_hdfs_path, local_path=local_path)
         # 读取yaml文件中的hdfs_path和git_path
-        with open(local_path + 'project.yaml', 'r') as f:
+        with open(local_path + 'module_config.yaml', 'r') as f:
             config = yaml.load(f, Loader=yaml.FullLoader)
         f.close()
         model_hdfs_path = config['model_hdfs_path']
@@ -917,9 +925,49 @@ def test():
 
 @app.route('/test2', methods=['GET'])
 def test2():
-    print('---------------------------------------------')
-    print('---------------------------------------------')
-    return JsonResponse.success(str(service_process_pid_dict) + str(service_url_dict)).to_dict()
+    config_hdfs_path = '/user/wangyan/config/module_config.yaml'
+    try:
+        hdfs_client.status(hdfs_path=config_hdfs_path, strict=False)['modificationTime']
+    except:
+        return JsonResponse.error(data='没有对应的配置文件').to_dict()
+    try:
+        local_path = './temp/module/config/' + config_hdfs_path
+        print('local_path is ' + local_path)
+        hdfs_client.download(hdfs_path=config_hdfs_path, local_path=local_path)
+        # 读取yaml文件中的hdfs_path和git_path
+        with open(local_path + 'module_config.yaml', 'r') as f:
+            config = yaml.load(f, Loader=yaml.FullLoader)
+        f.close()
+        model_hdfs_path = config['model_hdfs_path']
+        print('model_hdfs_path is '+ model_hdfs_path)
+        git_path = config['git_path']
+        print('git_path is ' + git_path)
+        branch_name = config['branch']
+        print('branch_name is ' + branch_name)
+        # 从git_path中获取repo_name和branch_name
+        repo_name = git_path.split('/')[-1]
+        print('repo_name is ' + repo_name)
+        owner_name = git_path.split('/')[-2]
+        print('owner_name is ' + owner_name)
+        try:
+            update_time = hdfs_client.status(hdfs_path=model_hdfs_path, strict=False)['modificationTime']
+            version = create_update_model(model_hdfs_path=model_hdfs_path, update_time=update_time)
+            repo = Repository.query.filter_by(repo_name=repo_name, owner_name=owner_name).first()
+            if repo is None:
+                return JsonResponse.error(data='没有对应的代码仓库').to_dict()
+            repo_id = repo.id
+            if version != -1:
+                if create_module(repo_id=repo_id, branch_name=branch_name, model_hdfs_path=model_hdfs_path,
+                                 model_update_time=update_time, model_version=version):
+                    return JsonResponse.success(data='创建module成功').to_dict()
+                else:
+                    return JsonResponse.error(data='创建module失败').to_dict()
+            else:
+                return JsonResponse.error(data='创建模型失败').to_dict()
+        except:
+            return JsonResponse.error(data='创建module失败').to_dict()
+    except:
+        return JsonResponse.error(data='创建module失败').to_dict()
 
 
 @app.route('/request_service', methods=['POST'])
@@ -1015,7 +1063,7 @@ if __name__ == '__main__':
     # p1 = pickle.dumps(app)
     # print('================================')
     # print(p1)
-    app.run(host='0.0.0.0', port=8081, debug=False)
+    app.run(host='0.0.0.0', port=8083, debug=False)
     # project = Project(repo_id=1, branch_name='master')
     # print(db.session.add(project))
     # db.session.flush()

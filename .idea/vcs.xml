@@ -12,6 +12,8 @@
     <mapping directory="$PROJECT_DIR$/temp/repos/rock/haha/0/haha" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/temp/repos/rock/hongguang_demo/0/hongguang_demo" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/temp/repos/rock/mrc/0/mrc" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/temp/repos/rock/mrc/1/mrc" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/temp/repos/rock/mrc/2/mrc" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/temp/repos/rock/mrc1/0/mrc1" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/temp/repos/rock/mrc1/1/mrc1" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/temp/repos/rock/mrc1/10/mrc1" vcs="Git" />
