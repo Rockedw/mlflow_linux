@@ -30,8 +30,8 @@
 
 class Config:
     SQLALCHEMY_BINDS = {
-        'mlflow': 'mysql://root:wangyan123@8.130.105.10:59036/mlflow',
-        'gitea': 'mysql://root:wangyan123@8.130.105.10:59036/gitea'
+        'mlflow': 'mysql://root:wangyan123@localhost:3306/mlflow',
+        'gitea': 'mysql://root:wangyan123@localhost:3306/gitea'
     }
     SQLALCHEMY_TRACK_MODIFICATIONS = True
     SQLALCHEMY_COMMIT_TEARDOWN = True
@@ -40,6 +40,6 @@ class Config:
     access_key = 'minioadmin'
     secret_key = 'minioadmin'
     endpoint_url = 'http://39.105.6.98:43099/'  # minio server地址
-    git_url = 'http://39.105.6.98:43000/'  # gitea地址
+    git_url = 'http://172.17.0.4:3000/'  # gitea地址
     UPLOAD_FOLDER = r'./upload'
     HDFS_URL = 'http://172.31.129.149:50070'
