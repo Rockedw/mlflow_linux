@@ -17,7 +17,7 @@ from sqlalchemy.orm import sessionmaker
 from werkzeug.utils import secure_filename
 
 from config import Config
-from util_methods import cmd, download_directory, rmtree, scan_dir, portscanner, kill_port, upload_model
+from util_methods import cmd, download_directory, rmtree, scan_dir, portscanner, kill_port, upload_model, create_dir
 import shutil
 import json
 from JsonResponse import JsonResponse
@@ -688,14 +688,15 @@ def create_env():
 
 def create_update_model(model_hdfs_path: str, update_time):
     model_name = model_hdfs_path.split('/')[-1]
-    saved_model_path = '/temp/models/' + model_name + '/' + update_time
+    saved_model_path = '/temp/models/' + model_name + '/' + str(update_time)
     model = Model.query.filter_by(model_hdfs_path=model_hdfs_path).order_by(Model.version.desc()).first()
     if model is not None:
         next_version = model.version + 1
     else:
         next_version = 1
-    model2 = Model.query.filter_by(model_hdfs_path=model_hdfs_path, update_time=update_time).one()
+    model2 = Model.query.filter_by(model_hdfs_path=model_hdfs_path, update_time=update_time).first()
     if not os.path.exists(saved_model_path):
+        os.makedirs(saved_model_path)
         print('下载模型')
         try:
             hdfs_client.download(model_hdfs_path, saved_model_path)
@@ -740,9 +741,12 @@ def create_module():
         return JsonResponse.error(data='没有对应的配置文件').to_dict()
     try:
         local_path = './temp/module/config/' + config_hdfs_path
+        if os.path.exists(local_path):
+            os.remove(local_path)
+        create_dir(local_path)
         hdfs_client.download(hdfs_path=config_hdfs_path, local_path=local_path)
         # 读取yaml文件中的hdfs_path和git_path
-        with open(local_path + 'module_config.yaml', 'r') as f:
+        with open(local_path, 'r') as f:
             config = yaml.load(f, Loader=yaml.FullLoader)
         f.close()
         model_hdfs_path = config['model_hdfs_path']
@@ -779,6 +783,7 @@ def query_all_module():
     for module in modules:
         data.append(module.to_dict())
     return JsonResponse.success(data=data).to_dict()
+
 
 @app.route('/delete_module_by_id')
 def delete_module_by_id():
@@ -931,15 +936,16 @@ def test2():
     except:
         return JsonResponse.error(data='没有对应的配置文件').to_dict()
     try:
-        local_path = './temp/module/config/' + config_hdfs_path
-        print('local_path is ' + local_path)
-        hdfs_client.download(hdfs_path=config_hdfs_path, local_path=local_path)
+        local_file_path = './temp/module/config/' + config_hdfs_path
+        create_dir(local_file_path)
+        print('local_path is ' + local_file_path)
+        hdfs_client.download(hdfs_path=config_hdfs_path, local_path=local_file_path)
         # 读取yaml文件中的hdfs_path和git_path
-        with open(local_path + 'module_config.yaml', 'r') as f:
+        with open(local_file_path, 'r') as f:
             config = yaml.load(f, Loader=yaml.FullLoader)
         f.close()
         model_hdfs_path = config['model_hdfs_path']
-        print('model_hdfs_path is '+ model_hdfs_path)
+        print('model_hdfs_path is ' + model_hdfs_path)
         git_path = config['git_path']
         print('git_path is ' + git_path)
         branch_name = config['branch']

@@ -141,9 +141,22 @@ def upload_model(model_path, model_name):
     print("Version: {}".format(mv.version))
 
 
+# 根据文件地址创建文件夹
+def create_dir(file_path):
+    if '/' not in file_path:
+        return
+    dir_path = file_path[:file_path.rfind('/')]
+    print(dir_path)
+    if len(dir_path) > 0 and not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+
+
+
 if __name__ == '__main__':
     # path = r'C:/Users/wangyan/PycharmProjects/MLFlow/repos'
     # head = scan_dir(path)
     # print(str(head))
-    command = 'cd C:/Users/wangyan/PycharmProjects/MLFlow && cd ./temp/repos/rock/second_repo/5/second_repo && rm -rf .git &&cd C:/Users/wangyan/PycharmProjects/MLFlow && mlflow run ./temp/repos/rock/second_repo/5/second_repo'
-    os.system(command)
+    # command = 'cd C:/Users/wangyan/PycharmProjects/MLFlow && cd ./temp/repos/rock/second_repo/5/second_repo && rm -rf .git &&cd C:/Users/wangyan/PycharmProjects/MLFlow && mlflow run ./temp/repos/rock/second_repo/5/second_repo'
+    # os.system(command)
+    # create_dir('/model.yaml')
+
