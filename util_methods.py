@@ -158,5 +158,5 @@ if __name__ == '__main__':
     # print(str(head))
     # command = 'cd C:/Users/wangyan/PycharmProjects/MLFlow && cd ./temp/repos/rock/second_repo/5/second_repo && rm -rf .git &&cd C:/Users/wangyan/PycharmProjects/MLFlow && mlflow run ./temp/repos/rock/second_repo/5/second_repo'
     # os.system(command)
-    # create_dir('/model.yaml')
+    create_dir('/model.yaml')
 

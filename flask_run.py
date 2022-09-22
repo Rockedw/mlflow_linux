@@ -737,7 +737,8 @@ def create_module():
     config_hdfs_path = data.get('config_hdfs_path')
     try:
         hdfs_client.status(hdfs_path=config_hdfs_path, strict=False)['modificationTime']
-    except:
+    except Exception as e:
+        print(e)
         return JsonResponse.error(data='没有对应的配置文件').to_dict()
     try:
         local_path = './temp/module/config/' + config_hdfs_path
@@ -770,9 +771,11 @@ def create_module():
                     return JsonResponse.error(data='创建module失败').to_dict()
             else:
                 return JsonResponse.error(data='创建模型失败').to_dict()
-        except:
+        except Exception as e:
+            print(e)
             return JsonResponse.error(data='创建module失败').to_dict()
-    except:
+    except Exception as e:
+        print(e)
         return JsonResponse.error(data='创建module失败').to_dict()
 
 
@@ -933,7 +936,8 @@ def test2():
     config_hdfs_path = '/user/wangyan/config/module_config.yaml'
     try:
         hdfs_client.status(hdfs_path=config_hdfs_path, strict=False)['modificationTime']
-    except:
+    except Exception as e:
+        print(e)
         return JsonResponse.error(data='没有对应的配置文件').to_dict()
     try:
         local_file_path = './temp/module/config/' + config_hdfs_path
@@ -970,9 +974,11 @@ def test2():
                     return JsonResponse.error(data='创建module失败').to_dict()
             else:
                 return JsonResponse.error(data='创建模型失败').to_dict()
-        except:
+        except Exception as e:
+            print(e)
             return JsonResponse.error(data='创建module失败').to_dict()
-    except:
+    except Exception as e:
+        print(e)
         return JsonResponse.error(data='创建module失败').to_dict()
 
 
