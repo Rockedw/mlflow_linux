@@ -719,8 +719,10 @@ def create_update_model(model_hdfs_path: str, update_time):
 
 
 def create_module(repo_id, branch_name, model_hdfs_path, model_update_time, model_version):
-    db.session.add(Module(repo_id=repo_id, branch_name=branch_name, model_hdfs_path=model_hdfs_path,
-                          model_update_time=model_update_time, model_version=model_version))
+    model = Model.query.filter_by(model_hdfs_path=model_hdfs_path, update_time=model_update_time).first()
+    db.session.add(
+        Module(repo_id=repo_id, branch_name=branch_name, model_name=model.model_name, model_hdfs_path=model_hdfs_path,
+               model_update_time=model_update_time, model_version=model_version))
     db.session.flush()
     try:
         db.session.commit()
@@ -732,7 +734,7 @@ def create_module(repo_id, branch_name, model_hdfs_path, model_update_time, mode
 
 
 @app.route('/create_module')
-def create_module():
+def create_module2():
     data = request.json
     config_hdfs_path = data.get('config_hdfs_path')
     try:
@@ -933,7 +935,9 @@ def test():
 
 @app.route('/test2', methods=['GET'])
 def test2():
+    print('test2 is running')
     config_hdfs_path = '/user/wangyan/config/module_config.yaml'
+    print('config_hdfs_path is ' + config_hdfs_path)
     try:
         hdfs_client.status(hdfs_path=config_hdfs_path, strict=False)['modificationTime']
     except Exception as e:
@@ -941,6 +945,8 @@ def test2():
         return JsonResponse.error(data='没有对应的配置文件').to_dict()
     try:
         local_file_path = './temp/module/config/' + config_hdfs_path
+        if os.path.exists(local_file_path):
+            os.remove(local_file_path)
         create_dir(local_file_path)
         print('local_path is ' + local_file_path)
         hdfs_client.download(hdfs_path=config_hdfs_path, local_path=local_file_path)
