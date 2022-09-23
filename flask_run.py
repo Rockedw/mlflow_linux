@@ -17,7 +17,8 @@ from sqlalchemy.orm import sessionmaker
 from werkzeug.utils import secure_filename
 
 from config import Config
-from util_methods import cmd, download_directory, rmtree, scan_dir, portscanner, kill_port, upload_model, create_dir,download_dir_from_hdfs
+from util_methods import cmd, download_directory, rmtree, scan_dir, portscanner, kill_port, upload_model, create_dir, \
+    download_dir_from_hdfs
 import shutil
 import json
 from JsonResponse import JsonResponse
@@ -575,7 +576,6 @@ def run_module2():
     return JsonResponse.success(data=service_url).to_dict()
 
 
-
 @app.route('/load_model', methods=['POST'])
 def load_model():
     data = request.json
@@ -854,18 +854,21 @@ def create_module2():
 def query_all_module():
     modules = Module.query.all()
     res = []
+    index = 0
     for module in modules:
         repo = Repository.query.filter_by(id=module.repo_id).first()
         res.append(
-            {'id': module.id, 'repo_id': module.repo_id,
+            {'index': index,
+             'id': module.id, 'repo_id': module.repo_id,
              'repo_name': repo.repo_name,
              'owner_name': repo.owner_name,
              'branch_name': module.branch_name,
-             'repo_update_time':repo.update_time,
+             'repo_update_time': repo.update_time,
              'model_name': module.model_name,
              'model_hdfs_path': module.model_hdfs_path,
              'model_update_time': module.model_update_time,
              'model_version': module.model_version})
+        index += 1
     return JsonResponse.success(data=res).to_dict()
 
 
@@ -904,7 +907,7 @@ def run_module():
         return JsonResponse.error(data='没有对应的model').to_dict()
     saved_model_path = '/temp/models/' + model.name + '/' + model.update_time
     if not os.path.exists(saved_model_path):
-        download_dir_from_hdfs(client=hdfs_client,hdfs_path=model.model_hdfs_path,local_path=saved_model_path)
+        download_dir_from_hdfs(client=hdfs_client, hdfs_path=model.model_hdfs_path, local_path=saved_model_path)
 
     repo = Repository.query.filter_by(id=repo_id).first()
     if repo is None:
