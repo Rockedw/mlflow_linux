@@ -504,8 +504,8 @@ def run_mlflow_project():
     return JsonResponse.success(data=res).to_dict()
 
 
-@app.route('/run_module', methods=['POST'])
-def run_module():
+@app.route('/run_module2', methods=['POST'])
+def run_module2():
     data = request.json
     owner_name = data.get('repo_owner')
     repo_name = data.get('repo_name')
