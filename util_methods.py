@@ -7,6 +7,7 @@ import subprocess
 from config import Config
 import os
 import mlflow
+import hdfs
 
 os.environ["AWS_ACCESS_KEY_ID"] = "minioadmin"
 os.environ["AWS_SECRET_ACCESS_KEY"] = "minioadmin"
@@ -151,6 +152,19 @@ def create_dir(file_path):
         os.makedirs(dir_path)
 
 
+def download_dir_from_hdfs(client: hdfs.Client, hdfs_path, local_path):
+    if not client.status(hdfs_path, strict=False):
+        return
+    if client.status(hdfs_path)['type'] == 'DIRECTORY':
+        if not os.path.exists(local_path):
+            os.makedirs(local_path)
+        for file in client.list(hdfs_path):
+            download_dir_from_hdfs(client, hdfs_path + '/' + file, local_path + '/' + file)
+    else:
+        if not os.path.exists(local_path):
+            create_dir(local_path)
+        client.download(hdfs_path, local_path)
+
 
 if __name__ == '__main__':
     # path = r'C:/Users/wangyan/PycharmProjects/MLFlow/repos'
@@ -159,4 +173,3 @@ if __name__ == '__main__':
     # command = 'cd C:/Users/wangyan/PycharmProjects/MLFlow && cd ./temp/repos/rock/second_repo/5/second_repo && rm -rf .git &&cd C:/Users/wangyan/PycharmProjects/MLFlow && mlflow run ./temp/repos/rock/second_repo/5/second_repo'
     # os.system(command)
     create_dir('/model.yaml')
-

@@ -17,7 +17,7 @@ from sqlalchemy.orm import sessionmaker
 from werkzeug.utils import secure_filename
 
 from config import Config
-from util_methods import cmd, download_directory, rmtree, scan_dir, portscanner, kill_port, upload_model, create_dir
+from util_methods import cmd, download_directory, rmtree, scan_dir, portscanner, kill_port, upload_model, create_dir,download_dir_from_hdfs
 import shutil
 import json
 from JsonResponse import JsonResponse
@@ -402,12 +402,12 @@ def query_all_model():
     model_list = Model.query.all()
     models = {}
     for model in model_list:
-        if model.name not in models:
-            models[model.name] = [
-                {'version': model.version, 'hdfs_path': model.hdfs_path, 'update_time': model.update_time}]
+        if model.model_name not in models:
+            models[model.model_name] = [
+                {'version': model.version, 'hdfs_path': model.model_hdfs_path, 'update_time': model.update_time}]
         else:
             models[model.name].append(
-                {'version': model.version, 'hdfs_path': model.hdfs_path, 'update_time': model.update_time})
+                {'version': model.version, 'hdfs_path': model.model_hdfs_path, 'update_time': model.update_time})
     return JsonResponse.success(data=models).to_dict()
 
 
@@ -502,6 +502,78 @@ def run_mlflow_project():
     # rmtree(version)
 
     return JsonResponse.success(data=res).to_dict()
+
+
+@app.route('/run_module', methods=['POST'])
+def run_module():
+    data = request.json
+    owner_name = data.get('repo_owner')
+    repo_name = data.get('repo_name')
+    branch_name = data.get('branch_name')
+    update_time = data.get('repo_update_time')
+    model_name: str = data.get('model_name')
+    model_version: int = data.get('model_version')
+    print(data)
+    key = repo_name + '/' + branch_name
+    key = key + '/' + model_name + '/' + str(model_version)
+    service_lock.acquire(blocking=True, timeout=60.0)
+    if key in service_url_dict and key in service_port_dict:
+        service_port_dict[key][1] = int(time.time())
+        service_lock.release()
+        return JsonResponse.success(data=service_url_dict[key]).to_dict()
+    service_lock.release()
+    branches, temp_version = query_branches_by_repo_name_and_owner(owner_name=owner_name,
+                                                                   repo_name=repo_name,
+                                                                   update_time=update_time
+                                                                   )
+    print('branches:' + str(branches))
+    version = './temp/repos/' + owner_name + '/' + repo_name + '/' + temp_version
+    if not os.path.exists(version):
+        return JsonResponse.error(data='没有对应的代码仓库').to_dict()
+    cwd = os.getcwd()
+    command = 'cd ' + cwd + ' && ' + 'cd ' + version + '/' + repo_name + ' && ' + 'git checkout ' + branch_name
+    cmd(command)
+    config_json = {}
+    model_local_paths = []
+    port = portscanner(already_used_ports=already_used_ports, lock=lock)
+    path = version + '/' + repo_name
+    local_path = download_directory(download_path=get_model_source(model_name, version=model_version))
+    model_local_paths.append(local_path)
+    config_json[model_name] = local_path
+    config_json['port'] = port
+    with open(path + '/mlflow_model_config.json', 'w') as f:
+        f.write(json.dumps(config_json))
+    f.close()
+    command = 'cd ' + cwd + ' && ' + \
+              'cd ' + path + ' && ' + \
+              'rm -rf .git &&' + \
+              'cd ' + cwd + ' && ' + \
+              'mlflow run ' + path + ' -P config=mlflow_model_config.json --env-manager=local'
+    # command = 'mlflow run ' + repo_url + ' --version ' + branch_name
+    print(command)
+    pid = cmd(command)
+    # cmd(command)
+    service_url = ''
+    cnt = 0
+    while cnt <= 30:
+        print(cnt)
+        cnt += 1
+        if os.path.exists(path + '/' + 'mlflow_output'):
+            break
+        else:
+            time.sleep(5)
+    with open(path + '/' + 'mlflow_output') as f:
+        service_lock.acquire()
+        try:
+            service_url = f.readline()
+            service_url_dict[key] = service_url
+            service_process_pid_dict[key] = pid
+            service_port_dict[key] = [port, int(time.time())]
+        finally:
+            service_lock.release()
+    f.close()
+    return JsonResponse.success(data=service_url).to_dict()
+
 
 
 @app.route('/load_model', methods=['POST'])
@@ -699,7 +771,7 @@ def create_update_model(model_hdfs_path: str, update_time):
         os.makedirs(saved_model_path)
         print('下载模型')
         try:
-            hdfs_client.download(model_hdfs_path, saved_model_path)
+            download_dir_from_hdfs(client=hdfs_client, hdfs_path=model_hdfs_path, local_path=saved_model_path)
         except Exception as e:
             print(e)
             print('下载失败')
@@ -744,10 +816,7 @@ def create_module2():
         return JsonResponse.error(data='没有对应的配置文件').to_dict()
     try:
         local_path = './temp/module/config/' + config_hdfs_path
-        if os.path.exists(local_path):
-            os.remove(local_path)
-        create_dir(local_path)
-        hdfs_client.download(hdfs_path=config_hdfs_path, local_path=local_path)
+        download_dir_from_hdfs(client=hdfs_client, hdfs_path=config_hdfs_path, local_path=local_path)
         # 读取yaml文件中的hdfs_path和git_path
         with open(local_path, 'r') as f:
             config = yaml.load(f, Loader=yaml.FullLoader)
@@ -784,10 +853,20 @@ def create_module2():
 @app.route('/query_all_module')
 def query_all_module():
     modules = Module.query.all()
-    data = []
+    res = []
     for module in modules:
-        data.append(module.to_dict())
-    return JsonResponse.success(data=data).to_dict()
+        repo = Repository.query.filter_by(id=module.repo_id).first()
+        res.append(
+            {'id': module.id, 'repo_id': module.repo_id,
+             'repo_name': repo.repo_name,
+             'owner_name': repo.owner_name,
+             'branch_name': module.branch_name,
+             'repo_update_time':repo.update_time,
+             'model_name': module.model_name,
+             'model_hdfs_path': module.model_hdfs_path,
+             'model_update_time': module.model_update_time,
+             'model_version': module.model_version})
+    return JsonResponse.success(data=res).to_dict()
 
 
 @app.route('/delete_module_by_id')
@@ -825,7 +904,7 @@ def run_module():
         return JsonResponse.error(data='没有对应的model').to_dict()
     saved_model_path = '/temp/models/' + model.name + '/' + model.update_time
     if not os.path.exists(saved_model_path):
-        hdfs_client.download(model_hdfs_path, saved_model_path)
+        download_dir_from_hdfs(client=hdfs_client,hdfs_path=model.model_hdfs_path,local_path=saved_model_path)
 
     repo = Repository.query.filter_by(id=repo_id).first()
     if repo is None:
@@ -1081,7 +1160,7 @@ if __name__ == '__main__':
     # p1 = pickle.dumps(app)
     # print('================================')
     # print(p1)
-    app.run(host='0.0.0.0', port=8083, debug=False)
+    app.run(host='0.0.0.0', port=8081, debug=True)
     # project = Project(repo_id=1, branch_name='master')
     # print(db.session.add(project))
     # db.session.flush()
