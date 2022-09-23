@@ -407,7 +407,7 @@ def query_all_model():
             models[model.model_name] = [
                 {'version': model.version, 'hdfs_path': model.model_hdfs_path, 'update_time': model.update_time}]
         else:
-            models[model.name].append(
+            models[model.model_name].append(
                 {'version': model.version, 'hdfs_path': model.model_hdfs_path, 'update_time': model.update_time})
     return JsonResponse.success(data=models).to_dict()
 
@@ -905,7 +905,7 @@ def run_module():
                                   version=model_version).first()
     if model is None:
         return JsonResponse.error(data='没有对应的model').to_dict()
-    saved_model_path = '/temp/models/' + model.model_name + '/' + model.update_time
+    saved_model_path = '/temp/models/' + model.model_name + '/' + str(model.update_time)
     if not os.path.exists(saved_model_path):
         download_dir_from_hdfs(client=hdfs_client, hdfs_path=model.model_hdfs_path, local_path=saved_model_path)
 
@@ -915,7 +915,7 @@ def run_module():
     repo_name = repo.repo_name
     owner_name = repo.owner_name
     repo_update_time = repo.update_time
-    key = repo_name + '/' + branch_name + '/' + model.name + '/' + model.version
+    key = repo_name + '/' + branch_name + '/' + model.model_name + '/' + str(model.version)
     service_lock.acquire(blocking=True, timeout=60.0)
     if key in service_url_dict and key in service_port_dict:
         service_port_dict[key][1] = int(time.time())
@@ -1120,7 +1120,7 @@ def delete_model():
     model_name = data.get('model_name')
     model_version = data.get('model_version')
     try:
-        db.session.query(Model).filter(Model.name == model_name and Model.version == model_version).delete()
+        db.session.query(Model).filter(Model.model_name == model_name and Model.version == model_version).delete()
         return JsonResponse.success().to_dict()
     except:
         return JsonResponse.error().to_dict()
