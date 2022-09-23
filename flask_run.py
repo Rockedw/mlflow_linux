@@ -905,7 +905,7 @@ def run_module():
                                   version=model_version).first()
     if model is None:
         return JsonResponse.error(data='没有对应的model').to_dict()
-    saved_model_path = '/temp/models/' + model.name + '/' + model.update_time
+    saved_model_path = '/temp/models/' + model.model_name + '/' + model.update_time
     if not os.path.exists(saved_model_path):
         download_dir_from_hdfs(client=hdfs_client, hdfs_path=model.model_hdfs_path, local_path=saved_model_path)
 
