@@ -805,7 +805,7 @@ def create_module(repo_id, branch_name, model_hdfs_path, model_update_time, mode
         return False
 
 
-@app.route('/create_module')
+@app.route('/create_module', methods=['POST'])
 def create_module2():
     data = request.json
     config_hdfs_path = data.get('config_hdfs_path')
@@ -940,7 +940,7 @@ def run_module():
     path = version + '/' + repo_name
 
     model_local_paths.append(saved_model_path)
-    config_json['model_path'] = saved_model_path+'/'+model.model_name
+    config_json['model_path'] = saved_model_path + '/' + model.model_name
     config_json['port'] = port
     with open(path + '/mlflow_model_config.json', 'w') as f:
         f.write(json.dumps(config_json))
