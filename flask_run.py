@@ -809,24 +809,34 @@ def create_module(repo_id, branch_name, model_hdfs_path, model_update_time, mode
 def create_module2():
     data = request.json
     config_hdfs_path = data.get('config_hdfs_path')
+    print('config_hdfs_path is ' + config_hdfs_path)
     try:
         hdfs_client.status(hdfs_path=config_hdfs_path, strict=False)['modificationTime']
     except Exception as e:
         print(e)
         return JsonResponse.error(data='没有对应的配置文件').to_dict()
     try:
-        local_path = './temp/module/config/' + config_hdfs_path
-        download_dir_from_hdfs(client=hdfs_client, hdfs_path=config_hdfs_path, local_path=local_path)
+        local_file_path = './temp/module/config/' + config_hdfs_path
+        if os.path.exists(local_file_path):
+            os.remove(local_file_path)
+        create_dir(local_file_path)
+        print('local_path is ' + local_file_path)
+        hdfs_client.download(hdfs_path=config_hdfs_path, local_path=local_file_path)
         # 读取yaml文件中的hdfs_path和git_path
-        with open(local_path, 'r') as f:
+        with open(local_file_path, 'r') as f:
             config = yaml.load(f, Loader=yaml.FullLoader)
         f.close()
         model_hdfs_path = config['model_hdfs_path']
+        print('model_hdfs_path is ' + model_hdfs_path)
         git_path = config['git_path']
+        print('git_path is ' + git_path)
         branch_name = config['branch']
+        print('branch_name is ' + branch_name)
         # 从git_path中获取repo_name和branch_name
         repo_name = git_path.split('/')[-1]
+        print('repo_name is ' + repo_name)
         owner_name = git_path.split('/')[-2]
+        print('owner_name is ' + owner_name)
         try:
             update_time = hdfs_client.status(hdfs_path=model_hdfs_path, strict=False)['modificationTime']
             version = create_update_model(model_hdfs_path=model_hdfs_path, update_time=update_time)
