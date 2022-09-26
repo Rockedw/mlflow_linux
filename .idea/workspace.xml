@@ -5,6 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5bebb915-b354-40e8-8c16-c8ae2fa12a3e" name="Changes" comment="测试">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/flask_run.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_run.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -235,7 +236,8 @@
       <workItem from="1662698126276" duration="34127000" />
       <workItem from="1663560066306" duration="31545000" />
       <workItem from="1663732887411" duration="638000" />
-      <workItem from="1663735056740" duration="24862000" />
+      <workItem from="1663735056740" duration="28379000" />
+      <workItem from="1664026113048" duration="595000" />
     </task>
     <task id="LOCAL-00001" summary="8.26">
       <created>1661501586154</created>
@@ -489,7 +491,21 @@
       <option name="project" value="LOCAL" />
       <updated>1663923358004</updated>
     </task>
-    <option name="localTasksCounter" value="37" />
+    <task id="LOCAL-00037" summary="测试">
+      <created>1663923695593</created>
+      <option name="number" value="00037" />
+      <option name="presentableId" value="LOCAL-00037" />
+      <option name="project" value="LOCAL" />
+      <updated>1663923695593</updated>
+    </task>
+    <task id="LOCAL-00038" summary="测试">
+      <created>1663923832827</created>
+      <option name="number" value="00038" />
+      <option name="presentableId" value="LOCAL-00038" />
+      <option name="project" value="LOCAL" />
+      <updated>1663923832827</updated>
+    </task>
+    <option name="localTasksCounter" value="39" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

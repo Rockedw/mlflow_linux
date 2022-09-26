@@ -760,7 +760,7 @@ def create_env():
 
 def create_update_model(model_hdfs_path: str, update_time):
     model_name = model_hdfs_path.split('/')[-1]
-    saved_model_path = '/temp/models/' + model_name + '/' + str(update_time)
+    saved_model_path = './temp/models/' + model_name + '/' + str(update_time)
     model = Model.query.filter_by(model_hdfs_path=model_hdfs_path).order_by(Model.version.desc()).first()
     if model is not None:
         next_version = model.version + 1
@@ -940,7 +940,7 @@ def run_module():
     path = version + '/' + repo_name
 
     model_local_paths.append(saved_model_path)
-    config_json['model_path'] = saved_model_path
+    config_json['model_path'] = saved_model_path+'/'+model.model_name
     config_json['port'] = port
     with open(path + '/mlflow_model_config.json', 'w') as f:
         f.write(json.dumps(config_json))
