@@ -217,25 +217,18 @@ def query_all_project():
     except Exception as e:
         projects = []
     res = []
+    module_ids = []
     index = 0
     for project in projects:
-        repo = Repository.query.filter_by(id=project.repo_id).first()
-        if repo is not None:
-            repo_name = repo.repo_name
-            repo_owner = repo.owner_name
-            update_time = repo.update_time
-            project_relations = ProjectRelation.query.filter_by(project_id=project.id).all()
-            module_ids = []
-            for project_relation in project_relations:
-                module_ids.append(project_relation.module_id)
-            res.append(
-                {'index': index, 'project_id': project.id, 'repo_owner': repo_owner, 'repo_name': repo_name,
-                 'branch_name': project.branch_name, 'module_ids': module_ids, 'update_time': update_time})
-            index += 1
-        print(res)
+        project_relations = ProjectRelation.query.filter_by(project_id=project.id).all()
+        for project_relation in project_relations:
+            module_ids.append(project_relation.module_id)
+        res.append(
+            {'index': index, 'project_id': project.id, 'project_hdfs_path': project.hdfs_path,
+             'project_version': project.version, 'module_ids': module_ids})
+        index += 1
+    print(res)
     return JsonResponse.success(data=res).to_dict()
-
-
 
 
 @app.route('/query_all_owner')
@@ -778,8 +771,6 @@ def create_project():
         return JsonResponse.error().to_dict()
 
 
-
-
 @app.route('/create_env', methods=['POST'])
 def create_env():
     data = request.json
@@ -1019,14 +1010,16 @@ def delete_module_by_id():
 def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
     model = Model.query.filter_by(model_hdfs_path=model_hdfs_path, update_time=model_update_time).first()
     if model is None:
-        return JsonResponse.error(data='没有对应的model').to_dict()
+        print('没有model')
+        return ''
     saved_model_path = '/temp/models/' + model.model_name + '/' + str(model.update_time)
     if not os.path.exists(saved_model_path):
         download_dir_from_hdfs(client=hdfs_client, hdfs_path=model.model_hdfs_path, local_path=saved_model_path)
 
     repo = Repository.query.filter_by(id=repo_id).first()
     if repo is None:
-        return JsonResponse.error(data='没有对应的代码仓库').to_dict()
+        print('没有对应的代码仓库')
+        return ''
     repo_name = repo.repo_name
     owner_name = repo.owner_name
     repo_update_time = repo.update_time
@@ -1035,7 +1028,7 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
     if key in service_url_dict and key in service_port_dict:
         service_port_dict[key][1] = int(time.time())
         service_lock.release()
-        return JsonResponse.success(data=service_url_dict[key]).to_dict()
+        return service_url_dict[key]
     service_lock.release()
 
     branches, temp_version = query_branches_by_repo_name_and_owner(owner_name=owner_name,
@@ -1045,7 +1038,8 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
     print('branches:' + str(branches))
     version = './temp/repos/' + owner_name + '/' + repo_name + '/' + temp_version
     if not os.path.exists(version):
-        return JsonResponse.error(data='没有对应的代码仓库').to_dict()
+        print('没有本地代码仓库')
+        return ''
     cwd = os.getcwd()
     command = 'cd ' + cwd + ' && ' + 'cd ' + version + '/' + repo_name + ' && ' + 'git checkout ' + branch_name
     cmd(command)
@@ -1088,7 +1082,7 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
         finally:
             service_lock.release()
     f.close()
-    return JsonResponse.success(data=service_url).to_dict()
+    return service_url
 
 
 # @app.route('/run_module', methods=['POST'])
@@ -1193,8 +1187,11 @@ def run_module_by_id(module_id):
     branch_name = module.branch_name
     model_hdfs_path = module.model_hdfs_path
     model_update_time = module.model_update_time
-    return load_model(repo_id=repo_id, branch_name=branch_name, model_hdfs_path=model_hdfs_path,
-                      model_update_time=model_update_time)
+    service_url = load_model(repo_id=repo_id, branch_name=branch_name, model_hdfs_path=model_hdfs_path,
+                             model_update_time=model_update_time)
+    if not service_url == '':
+        return JsonResponse.success(data=service_url).to_dict()
+    return JsonResponse.error(data='启动服务失败').to_dict()
 
 
 @app.route('/run_project', methods=['POST'])
@@ -1207,7 +1204,8 @@ def run_project():
         return JsonResponse.error(data='没有对应的project').to_dict()
     update_time = project.update_time
     local_saved_path = './temp/projects/' + str(project_id) + '/' + str(update_time)
-    if not os.path.exists(local_saved_path) and not project_hdfs_path == hdfs_client.status(project_hdfs_path)['modificationTime']:
+    if not os.path.exists(local_saved_path) and not project_hdfs_path == hdfs_client.status(project_hdfs_path)[
+        'modificationTime']:
         return JsonResponse.error(data='本地没有对应的project').to_dict()
     if not os.path.exists(local_saved_path):
         os.mkdir(local_saved_path)
@@ -1217,9 +1215,6 @@ def run_project():
         module_id = project_relation.module_id
         run_module_by_id(module_id)
     return JsonResponse.success(data='success').to_dict()
-
-
-
 
 
 # @app.route('/create_project', methods=['POST'])
@@ -1368,7 +1363,8 @@ def delete_model():
     try:
         db.session.query(Model).filter(Model.model_name == model_name and Model.version == model_version).delete()
         return JsonResponse.success().to_dict()
-    except:
+    except Exception as e:
+        print(e)
         return JsonResponse.error().to_dict()
 
 
