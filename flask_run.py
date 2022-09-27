@@ -424,7 +424,6 @@ def query_file_by_owner_and_name_and_branch():
     return JsonResponse.success(data=[files]).to_dict()
 
 
-@app.route('/query_all_model', methods=['GET'])
 # class Model(db.Model):
 #     __tablename__ = 'model'
 #     __bind_key__ = 'mlflow'
@@ -433,21 +432,29 @@ def query_file_by_owner_and_name_and_branch():
 #     version = db.Column('version', db.Integer)
 #     model_hdfs_path = db.Column('model_hdfs_path', db.String(255))
 #     update_time = db.Column('update_time', db.Integer)
+@app.route('/query_all_model', methods=['GET'])
 def query_all_model():
     """
     查询所有模型
     :return:
     """
-    model_list = Model.query.all()
-    models = {}
-    for model in model_list:
-        if model.model_name not in models:
-            models[model.model_name] = [
-                {'version': model.version, 'hdfs_path': model.model_hdfs_path, 'update_time': model.update_time}]
-        else:
-            models[model.model_name].append(
-                {'version': model.version, 'hdfs_path': model.model_hdfs_path, 'update_time': model.update_time})
-    return JsonResponse.success(data=models).to_dict()
+    # model_list = Model.query.all()
+    # models = {}
+    # for model in model_list:
+    #     if model.model_name not in models:
+    #         models[model.model_name] = [
+    #             {'version': model.version, 'hdfs_path': model.model_hdfs_path, 'update_time': model.update_time}]
+    #     else:
+    #         models[model.model_name].append(
+    #             {'version': model.version, 'hdfs_path': model.model_hdfs_path, 'update_time': model.update_time})
+    # return JsonResponse.success(data=models).to_dict()
+    models = Model.query.all()
+    res = []
+    for model in models:
+        res.append(
+            {'id': model.id, 'model_name': model.model_name, 'version': model.version,
+             'model_hdfs_path': model.model_hdfs_path, 'update_time': model.update_time})
+    return JsonResponse.success(data=res).to_dict()
 
 
 @app.route('/download_model_by_name_and_version', methods=['POST'])
