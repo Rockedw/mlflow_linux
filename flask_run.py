@@ -110,12 +110,29 @@ class TaskRelation(db.Model):
     repo_id = db.Column(db.Integer)
 
 
+# class Project(db.Model):
+#     __tablename__ = 'project'
+#     __bind_key__ = 'mlflow'
+#     id = db.Column('id', db.Integer, primary_key=True, index=True)
+#     repo_id = db.Column('repo_id', db.Integer)
+#     branch_name = db.Column('branch_name', db.String(255))
+#
+#
+# class ProjectRelation(db.Model):
+#     __tablename__ = 'project_relation'
+#     __bind_key__ = 'mlflow'
+#     id = db.Column('id', db.Integer, primary_key=True, index=True)
+#     project_id = db.Column('project_id', db.Integer)
+#     model_name = db.Column('model_name', db.String(255))
+#     model_version = db.Column('model_version', db.Integer)
+
 class Project(db.Model):
     __tablename__ = 'project'
     __bind_key__ = 'mlflow'
     id = db.Column('id', db.Integer, primary_key=True, index=True)
-    repo_id = db.Column('repo_id', db.Integer)
-    branch_name = db.Column('branch_name', db.String(255))
+    hdfs_path = db.Column('hdfs_path', db.String(255))
+    update_time = db.Column('update_time', db.Integer)
+    version = db.Column('version', db.Integer)
 
 
 class ProjectRelation(db.Model):
@@ -123,8 +140,7 @@ class ProjectRelation(db.Model):
     __bind_key__ = 'mlflow'
     id = db.Column('id', db.Integer, primary_key=True, index=True)
     project_id = db.Column('project_id', db.Integer)
-    model_name = db.Column('model_name', db.String(255))
-    model_version = db.Column('model_version', db.Integer)
+    module_id = db.Column('module_id', db.Integer)
 
 
 class Module(db.Model):
@@ -169,6 +185,30 @@ def get_model_source(name, version):
     return None
 
 
+# @app.route('/query_all_project', methods=['GET'])
+# def query_all_project():
+#     print('get_all_project')
+#     try:
+#         projects = Project.query.all()
+#     except Exception as e:
+#         projects = []
+#     res = []
+#     index = 0
+#     for project in projects:
+#         repo = Repository.query.filter_by(id=project.repo_id).all()[0]
+#         repo_name = repo.repo_name
+#         repo_owner = repo.owner_name
+#         update_time = repo.update_time
+#         temp = get_project_relation_by_pid(project.id)
+#         res.append(
+#             {'index': index, 'project_id': project.id, 'repo_owner': repo_owner, 'repo_name': repo_name,
+#              'branch_name': project.branch_name, 'model_names': temp['models'],
+#              'model_versions': temp['versions'], 'update_time': update_time})
+#         index += 1
+#         # print(res)
+#     return JsonResponse.success(data=res).to_dict()
+
+
 @app.route('/query_all_project', methods=['GET'])
 def query_all_project():
     print('get_all_project')
@@ -179,18 +219,23 @@ def query_all_project():
     res = []
     index = 0
     for project in projects:
-        repo = Repository.query.filter_by(id=project.repo_id).all()[0]
-        repo_name = repo.repo_name
-        repo_owner = repo.owner_name
-        update_time = repo.update_time
-        temp = get_project_relation_by_pid(project.id)
-        res.append(
-            {'index': index, 'project_id': project.id, 'repo_owner': repo_owner, 'repo_name': repo_name,
-             'branch_name': project.branch_name, 'model_names': temp['models'],
-             'model_versions': temp['versions'], 'update_time': update_time})
-        index += 1
-        # print(res)
+        repo = Repository.query.filter_by(id=project.repo_id).first()
+        if repo is not None:
+            repo_name = repo.repo_name
+            repo_owner = repo.owner_name
+            update_time = repo.update_time
+            project_relations = ProjectRelation.query.filter_by(project_id=project.id).all()
+            module_ids = []
+            for project_relation in project_relations:
+                module_ids.append(project_relation.module_id)
+            res.append(
+                {'index': index, 'project_id': project.id, 'repo_owner': repo_owner, 'repo_name': repo_name,
+                 'branch_name': project.branch_name, 'module_ids': module_ids, 'update_time': update_time})
+            index += 1
+        print(res)
     return JsonResponse.success(data=res).to_dict()
+
+
 
 
 @app.route('/query_all_owner')
@@ -576,104 +621,163 @@ def run_module2():
     return JsonResponse.success(data=service_url).to_dict()
 
 
-@app.route('/load_model', methods=['POST'])
-def load_model():
-    data = request.json
-    owner_name = data.get('repo_owner')
-    repo_name = data.get('repo_name')
-    branch_name = data.get('branch_name')
-    update_time = data.get('update_time')
-    model_names: list = data.get('model_names')
-    model_versions: list = data.get('model_versions')
-    print(data)
-    key = repo_name + '/' + branch_name
-    for i in range(0, len(model_names)):
-        key = key + '/' + model_names[i] + '/' + str(model_versions[i])
-    service_lock.acquire(blocking=True, timeout=60.0)
-    if key in service_url_dict and key in service_port_dict:
-        service_port_dict[key][1] = int(time.time())
-        service_lock.release()
-        return JsonResponse.success(data=service_url_dict[key]).to_dict()
-    service_lock.release()
-    branches, temp_version = query_branches_by_repo_name_and_owner(owner_name=owner_name,
-                                                                   repo_name=repo_name,
-                                                                   update_time=update_time
-                                                                   )
-    print('branches:' + str(branches))
-    version = './temp/repos/' + owner_name + '/' + repo_name + '/' + temp_version
-    if not os.path.exists(version):
-        return JsonResponse.error(data='没有对应的代码仓库').to_dict()
-    cwd = os.getcwd()
-    command = 'cd ' + cwd + ' && ' + 'cd ' + version + '/' + repo_name + ' && ' + 'git checkout ' + branch_name
-    cmd(command)
-    config_json = {}
-    model_local_paths = []
-    port = portscanner(already_used_ports=already_used_ports, lock=lock)
-    path = version + '/' + repo_name
-    for i in range(0, len(model_names)):
-        local_path = download_directory(download_path=get_model_source(model_names[i], version=model_versions[i]))
-        model_local_paths.append(local_path)
-        config_json[model_names[i]] = local_path
-        config_json['port'] = port
-    with open(path + '/mlflow_model_config.json', 'w') as f:
-        f.write(json.dumps(config_json))
-    f.close()
-    command = 'cd ' + cwd + ' && ' + \
-              'cd ' + path + ' && ' + \
-              'rm -rf .git &&' + \
-              'cd ' + cwd + ' && ' + \
-              'mlflow run ' + path + ' -P config=mlflow_model_config.json --env-manager=local'
-    # command = 'mlflow run ' + repo_url + ' --version ' + branch_name
-    print(command)
-    pid = cmd(command)
-    # cmd(command)
-    service_url = ''
-    cnt = 0
-    while cnt <= 30:
-        print(cnt)
-        cnt += 1
-        if os.path.exists(path + '/' + 'mlflow_output'):
-            break
-        else:
-            time.sleep(5)
-    with open(path + '/' + 'mlflow_output') as f:
-        service_lock.acquire()
-        try:
-            service_url = f.readline()
-            service_url_dict[key] = service_url
-            service_process_pid_dict[key] = pid
-            service_port_dict[key] = [port, int(time.time())]
-        finally:
-            service_lock.release()
-    f.close()
-    return JsonResponse.success(data=service_url).to_dict()
+# @app.route('/load_model', methods=['POST'])
+# def load_model():
+#     data = request.json
+#     owner_name = data.get('repo_owner')
+#     repo_name = data.get('repo_name')
+#     branch_name = data.get('branch_name')
+#     update_time = data.get('update_time')
+#     model_names: list = data.get('model_names')
+#     model_versions: list = data.get('model_versions')
+#     print(data)
+#     key = repo_name + '/' + branch_name
+#     for i in range(0, len(model_names)):
+#         key = key + '/' + model_names[i] + '/' + str(model_versions[i])
+#     service_lock.acquire(blocking=True, timeout=60.0)
+#     if key in service_url_dict and key in service_port_dict:
+#         service_port_dict[key][1] = int(time.time())
+#         service_lock.release()
+#         return JsonResponse.success(data=service_url_dict[key]).to_dict()
+#     service_lock.release()
+#     branches, temp_version = query_branches_by_repo_name_and_owner(owner_name=owner_name,
+#                                                                    repo_name=repo_name,
+#                                                                    update_time=update_time
+#                                                                    )
+#     print('branches:' + str(branches))
+#     version = './temp/repos/' + owner_name + '/' + repo_name + '/' + temp_version
+#     if not os.path.exists(version):
+#         return JsonResponse.error(data='没有对应的代码仓库').to_dict()
+#     cwd = os.getcwd()
+#     command = 'cd ' + cwd + ' && ' + 'cd ' + version + '/' + repo_name + ' && ' + 'git checkout ' + branch_name
+#     cmd(command)
+#     config_json = {}
+#     model_local_paths = []
+#     port = portscanner(already_used_ports=already_used_ports, lock=lock)
+#     path = version + '/' + repo_name
+#     for i in range(0, len(model_names)):
+#         local_path = download_directory(download_path=get_model_source(model_names[i], version=model_versions[i]))
+#         model_local_paths.append(local_path)
+#         config_json[model_names[i]] = local_path
+#         config_json['port'] = port
+#     with open(path + '/mlflow_model_config.json', 'w') as f:
+#         f.write(json.dumps(config_json))
+#     f.close()
+#     command = 'cd ' + cwd + ' && ' + \
+#               'cd ' + path + ' && ' + \
+#               'rm -rf .git &&' + \
+#               'cd ' + cwd + ' && ' + \
+#               'mlflow run ' + path + ' -P config=mlflow_model_config.json --env-manager=local'
+#     # command = 'mlflow run ' + repo_url + ' --version ' + branch_name
+#     print(command)
+#     pid = cmd(command)
+#     # cmd(command)
+#     service_url = ''
+#     cnt = 0
+#     while cnt <= 30:
+#         print(cnt)
+#         cnt += 1
+#         if os.path.exists(path + '/' + 'mlflow_output'):
+#             break
+#         else:
+#             time.sleep(5)
+#     with open(path + '/' + 'mlflow_output') as f:
+#         service_lock.acquire()
+#         try:
+#             service_url = f.readline()
+#             service_url_dict[key] = service_url
+#             service_process_pid_dict[key] = pid
+#             service_port_dict[key] = [port, int(time.time())]
+#         finally:
+#             service_lock.release()
+#     f.close()
+#     return JsonResponse.success(data=service_url).to_dict()
 
+
+# @app.route('/create_project', methods=['POST'])
+# def create_project():
+#     data = request.json
+#     owner_name = data.get('owner_name')
+#     repo_name = data.get('repo_name')
+#     branch_name = data.get('branch_name')
+#     model_list = data.get('model_list')
+#     repo = Repository.query.filter_by(owner_name=owner_name, repo_name=repo_name).first()
+#     repo_id = repo.id
+#     project = Project(repo_id=repo_id, branch_name=branch_name)
+#     db.session.add(project)
+#     db.session.flush()
+#     project_id = project.id
+#     for model in model_list:
+#         project_relation = ProjectRelation(project_id=project_id, model_name=model[0], model_version=int(model[1]))
+#         db.session.add(project_relation)
+#     try:
+#         db.session.commit()
+#         if project_id not in env_dict:
+#             env_dict.append(project_id)
+#         return JsonResponse.success(data='success').to_dict()
+#     except Exception as e:
+#         print(e)
+#         db.session.rollback()
+#         return JsonResponse.error().to_dict()
 
 @app.route('/create_project', methods=['POST'])
 def create_project():
     data = request.json
-    owner_name = data.get('owner_name')
-    repo_name = data.get('repo_name')
-    branch_name = data.get('branch_name')
-    model_list = data.get('model_list')
-    repo = Repository.query.filter_by(owner_name=owner_name, repo_name=repo_name).first()
-    repo_id = repo.id
-    project = Project(repo_id=repo_id, branch_name=branch_name)
-    db.session.add(project)
-    db.session.flush()
-    project_id = project.id
-    for model in model_list:
-        project_relation = ProjectRelation(project_id=project_id, model_name=model[0], model_version=int(model[1]))
+    hdfs_path = data.get('hdfs_path')
+    if not hdfs_client.status(hdfs_path=hdfs_path)['type'] == 'DIRECTORY':
+        return JsonResponse.error(data='hdfs路径不存在').to_dict()
+    update_time = hdfs_client.status(hdfs_path=hdfs_path)['modificationTime']
+    saved_path = './temp/project/' + update_time
+    if not os.path.exists(saved_path):
+        download_dir_from_hdfs(client=hdfs_client, hdfs_path=hdfs_path, local_path=saved_path)
+    if os.path.exists(saved_path + '/.git'):
+        rmtree(saved_path + '/.git')
+    with open('./temp/project/' + hdfs_path.split('/')[-1] + '/config.yaml') as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
+    f.close()
+    modules = config['modules']
+    module_id_list = []
+    for module in modules:
+        git_path = module['git_path']
+        branch = module['branch']
+        model_hdfs_path = module['hdfs_path']
+        model_update_time = hdfs_client.status(hdfs_path=model_hdfs_path)['modificationTime']
+        repo_name = git_path.split('/')[-1]
+        repo_owner = git_path.split('/')[-2]
+        repo = Repository.query.filter_by(owner_name=repo_owner, repo_name=repo_name).first()
+        if repo is None:
+            return JsonResponse.error(data='仓库不存在').to_dict()
+        repo_id = repo.id
+        version = create_update_model(model_hdfs_path=model_hdfs_path, update_time=model_update_time)
+        if version == -1:
+            return JsonResponse.error(data='模型不存在').to_dict()
+        module_id = create_module(repo_id=repo_id, branch_name=branch, model_hdfs_path=model_hdfs_path,
+                                  model_update_time=model_update_time, model_version=version)
+        if module_id == -1:
+            return JsonResponse.error(data='module创建失败').to_dict()
+        else:
+            module_id_list.append(module_id)
+    project = Project.query.filter_by(hdfs_path=hdfs_path).order_by(Project.version.desc()).first()
+    if project is None:
+        temp_project = Project(hdfs_path=hdfs_path, update_time=update_time, version=1)
+        db.session.add(temp_project)
+    else:
+        project_version = project.version + 1
+        temp_project = Project(hdfs_path=hdfs_path, update_time=update_time, version=project_version)
+        db.session.add(temp_project)
+    for module_id in module_id_list:
+        project_relation = ProjectRelation(project_id=temp_project.id, module_id=module_id)
         db.session.add(project_relation)
+    db.session.flush()
     try:
         db.session.commit()
-        if project_id not in env_dict:
-            env_dict.append(project_id)
         return JsonResponse.success(data='success').to_dict()
     except Exception as e:
         print(e)
         db.session.rollback()
         return JsonResponse.error().to_dict()
+
+
 
 
 @app.route('/create_env', methods=['POST'])
@@ -791,18 +895,31 @@ def create_update_model(model_hdfs_path: str, update_time):
 
 
 def create_module(repo_id, branch_name, model_hdfs_path, model_update_time, model_version):
+    module = Module.query.filter_by(repo_id=repo_id, branch_name=branch_name,
+                                    model_hdfs_path=model_hdfs_path,
+                                    model_update_time=model_update_time,
+                                    model_version=model_version).first()
+
+    if module is not None:
+        return module.id
     model = Model.query.filter_by(model_hdfs_path=model_hdfs_path, update_time=model_update_time).first()
-    db.session.add(
-        Module(repo_id=repo_id, branch_name=branch_name, model_name=model.model_name, model_hdfs_path=model_hdfs_path,
-               model_update_time=model_update_time, model_version=model_version))
+
+    module2 = Module(repo_id=repo_id, branch_name=branch_name, model_name=model.model_name,
+                     model_hdfs_path=model_hdfs_path,
+                     model_update_time=model_update_time, model_version=model_version)
+    db.session.add(module2)
+
+    # db.session.add(
+    #     Module(repo_id=repo_id, branch_name=branch_name, model_name=model.model_name, model_hdfs_path=model_hdfs_path,
+    #            model_update_time=model_update_time, model_version=model_version))
     db.session.flush()
     try:
         db.session.commit()
-        return True
+        return module2.id
     except Exception as e:
         db.session.rollback()
         print(e)
-        return False
+        return -1
 
 
 @app.route('/create_module', methods=['POST'])
@@ -845,8 +962,8 @@ def create_module2():
                 return JsonResponse.error(data='没有对应的代码仓库').to_dict()
             repo_id = repo.id
             if version != -1:
-                if create_module(repo_id=repo_id, branch_name=branch_name, model_hdfs_path=model_hdfs_path,
-                                 model_update_time=update_time, model_version=version):
+                if not create_module(repo_id=repo_id, branch_name=branch_name, model_hdfs_path=model_hdfs_path,
+                                     model_update_time=update_time, model_version=version) == -1:
                     return JsonResponse.success(data='创建module成功').to_dict()
                 else:
                     return JsonResponse.error(data='创建module失败').to_dict()
@@ -899,20 +1016,8 @@ def delete_module_by_id():
         return JsonResponse.error(data='删除module失败').to_dict()
 
 
-@app.route('/run_module', methods=['POST'])
-def run_module():
-    data = request.json
-    module_id = data.get('module_id')
-    module = Module.query.filter_by(id=module_id).first()
-    if module is None:
-        return JsonResponse.error(data='没有对应的module').to_dict()
-    repo_id = module.repo_id
-    branch_name = module.branch_name
-    model_hdfs_path = module.model_hdfs_path
-    model_update_time = module.model_update_time
-    model_version = module.model_version
-    model = Model.query.filter_by(model_hdfs_path=model_hdfs_path, update_time=model_update_time,
-                                  version=model_version).first()
+def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
+    model = Model.query.filter_by(model_hdfs_path=model_hdfs_path, update_time=model_update_time).first()
     if model is None:
         return JsonResponse.error(data='没有对应的model').to_dict()
     saved_model_path = '/temp/models/' + model.model_name + '/' + str(model.update_time)
@@ -984,6 +1089,137 @@ def run_module():
             service_lock.release()
     f.close()
     return JsonResponse.success(data=service_url).to_dict()
+
+
+# @app.route('/run_module', methods=['POST'])
+# def run_module():
+#     data = request.json
+#     module_id = data.get('module_id')
+#     module = Module.query.filter_by(id=module_id).first()
+#     if module is None:
+#         return JsonResponse.error(data='没有对应的module').to_dict()
+#     repo_id = module.repo_id
+#     branch_name = module.branch_name
+#     model_hdfs_path = module.model_hdfs_path
+#     model_update_time = module.model_update_time
+#     model_version = module.model_version
+#     model = Model.query.filter_by(model_hdfs_path=model_hdfs_path, update_time=model_update_time,
+#                                   version=model_version).first()
+#     if model is None:
+#         return JsonResponse.error(data='没有对应的model').to_dict()
+#     saved_model_path = '/temp/models/' + model.model_name + '/' + str(model.update_time)
+#     if not os.path.exists(saved_model_path):
+#         download_dir_from_hdfs(client=hdfs_client, hdfs_path=model.model_hdfs_path, local_path=saved_model_path)
+#
+#     repo = Repository.query.filter_by(id=repo_id).first()
+#     if repo is None:
+#         return JsonResponse.error(data='没有对应的代码仓库').to_dict()
+#     repo_name = repo.repo_name
+#     owner_name = repo.owner_name
+#     repo_update_time = repo.update_time
+#     key = repo_name + '/' + branch_name + '/' + model.model_name + '/' + str(model.version)
+#     service_lock.acquire(blocking=True, timeout=60.0)
+#     if key in service_url_dict and key in service_port_dict:
+#         service_port_dict[key][1] = int(time.time())
+#         service_lock.release()
+#         return JsonResponse.success(data=service_url_dict[key]).to_dict()
+#     service_lock.release()
+#
+#     branches, temp_version = query_branches_by_repo_name_and_owner(owner_name=owner_name,
+#                                                                    repo_name=repo_name,
+#                                                                    update_time=repo_update_time
+#                                                                    )
+#     print('branches:' + str(branches))
+#     version = './temp/repos/' + owner_name + '/' + repo_name + '/' + temp_version
+#     if not os.path.exists(version):
+#         return JsonResponse.error(data='没有对应的代码仓库').to_dict()
+#     cwd = os.getcwd()
+#     command = 'cd ' + cwd + ' && ' + 'cd ' + version + '/' + repo_name + ' && ' + 'git checkout ' + branch_name
+#     cmd(command)
+#     config_json = {}
+#     model_local_paths = []
+#     port = portscanner(already_used_ports=already_used_ports, lock=lock)
+#     path = version + '/' + repo_name
+#
+#     model_local_paths.append(saved_model_path)
+#     config_json['model_path'] = saved_model_path + '/' + model.model_name
+#     config_json['port'] = port
+#     with open(path + '/mlflow_model_config.json', 'w') as f:
+#         f.write(json.dumps(config_json))
+#     f.close()
+#     command = 'cd ' + cwd + ' && ' + \
+#               'cd ' + path + ' && ' + \
+#               'rm -rf .git &&' + \
+#               'cd ' + cwd + ' && ' + \
+#               'mlflow run ' + path + ' -P config=mlflow_model_config.json --env-manager=local'
+#     # command = 'mlflow run ' + repo_url + ' --version ' + branch_name
+#     print(command)
+#     pid = cmd(command)
+#     # cmd(command)
+#     service_url = ''
+#     cnt = 0
+#     while cnt <= 30:
+#         print(cnt)
+#         cnt += 1
+#         if os.path.exists(path + '/' + 'mlflow_output'):
+#             break
+#         else:
+#             time.sleep(5)
+#     with open(path + '/' + 'mlflow_output') as f:
+#         service_lock.acquire()
+#         try:
+#             service_url = f.readline()
+#             service_url_dict[key] = service_url
+#             service_process_pid_dict[key] = pid
+#             service_port_dict[key] = [port, int(time.time())]
+#         finally:
+#             service_lock.release()
+#     f.close()
+#     return JsonResponse.success(data=service_url).to_dict()
+
+
+@app.route('/run_module', methods=['POST'])
+def run_module():
+    data = request.json
+    module_id = data.get('module_id')
+    return run_module_by_id(module_id)
+
+
+def run_module_by_id(module_id):
+    module = Module.query.filter_by(id=module_id).first()
+    if module is None:
+        return JsonResponse.error(data='没有对应的module').to_dict()
+    repo_id = module.repo_id
+    branch_name = module.branch_name
+    model_hdfs_path = module.model_hdfs_path
+    model_update_time = module.model_update_time
+    return load_model(repo_id=repo_id, branch_name=branch_name, model_hdfs_path=model_hdfs_path,
+                      model_update_time=model_update_time)
+
+
+@app.route('/run_project', methods=['POST'])
+def run_project():
+    data = request.json
+    project_id = data.get('project_id')
+    project = Project.query.filter_by(id=project_id).first()
+    project_hdfs_path = project.hdfs_path
+    if project is None:
+        return JsonResponse.error(data='没有对应的project').to_dict()
+    update_time = project.update_time
+    local_saved_path = './temp/projects/' + str(project_id) + '/' + str(update_time)
+    if not os.path.exists(local_saved_path) and not project_hdfs_path == hdfs_client.status(project_hdfs_path)['modificationTime']:
+        return JsonResponse.error(data='本地没有对应的project').to_dict()
+    if not os.path.exists(local_saved_path):
+        os.mkdir(local_saved_path)
+    hdfs_client.download(project_hdfs_path, local_saved_path, overwrite=True)
+    project_relations = ProjectRelation.query.filter_by(project_id=project_id).all()
+    for project_relation in project_relations:
+        module_id = project_relation.module_id
+        run_module_by_id(module_id)
+    return JsonResponse.success(data='success').to_dict()
+
+
+
 
 
 # @app.route('/create_project', methods=['POST'])
@@ -1065,8 +1301,8 @@ def test2():
                 return JsonResponse.error(data='没有对应的代码仓库').to_dict()
             repo_id = repo.id
             if version != -1:
-                if create_module(repo_id=repo_id, branch_name=branch_name, model_hdfs_path=model_hdfs_path,
-                                 model_update_time=update_time, model_version=version):
+                if not create_module(repo_id=repo_id, branch_name=branch_name, model_hdfs_path=model_hdfs_path,
+                                     model_update_time=update_time, model_version=version) == -1:
                     return JsonResponse.success(data='创建module成功').to_dict()
                 else:
                     return JsonResponse.error(data='创建module失败').to_dict()
