@@ -723,11 +723,13 @@ def run_module2():
 @app.route('/create_project', methods=['POST'])
 def create_project():
     data = request.json
-    hdfs_path = data.get('hdfs_path')
-    if not hdfs_client.status(hdfs_path=hdfs_path)['type'] == 'DIRECTORY':
+    hdfs_path = data.get('project_hdfs_path')
+    print('hdps_path:' + hdfs_path)
+    if len(hdfs_path) <= 0 or not hdfs_client.status(hdfs_path=hdfs_path)['type'] == 'DIRECTORY':
         return JsonResponse.error(data='hdfs路径不存在').to_dict()
     update_time = hdfs_client.status(hdfs_path=hdfs_path)['modificationTime']
-    saved_path = './temp/project/' + update_time
+    saved_path = './temp/projects/' + update_time
+    print('saved_path:' + saved_path)
     if not os.path.exists(saved_path):
         download_dir_from_hdfs(client=hdfs_client, hdfs_path=hdfs_path, local_path=saved_path)
     if os.path.exists(saved_path + '/.git'):
@@ -736,6 +738,7 @@ def create_project():
         config = yaml.load(f, Loader=yaml.FullLoader)
     f.close()
     modules = config['modules']
+    print('modules:' + str(modules))
     module_id_list = []
     for module in modules:
         git_path = module['git_path']
@@ -1072,7 +1075,7 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
     # cmd(command)
     service_url = ''
     cnt = 0
-    while cnt <= 30:
+    while cnt <= 10:
         print(cnt)
         cnt += 1
         if os.path.exists(path + '/' + 'mlflow_output'):
