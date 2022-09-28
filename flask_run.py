@@ -761,6 +761,7 @@ def create_project():
         else:
             module_id_list.append(module_id)
     project = Project.query.filter_by(hdfs_path=hdfs_path).order_by(Project.version.desc()).first()
+    db.session.flush()
     if project is None:
         temp_project = Project(hdfs_path=hdfs_path, update_time=update_time, version=1)
         db.session.add(temp_project)
@@ -771,7 +772,6 @@ def create_project():
     for module_id in module_id_list:
         project_relation = ProjectRelation(project_id=temp_project.id, module_id=module_id)
         db.session.add(project_relation)
-    db.session.flush()
     try:
         db.session.commit()
         return JsonResponse.success(data='success').to_dict()
