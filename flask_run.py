@@ -737,10 +737,10 @@ def create_project():
     with open(saved_path+'/config.yaml') as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
     f.close()
-    modules = config['modules']
+    modules:dict = config['modules']
     print('modules:' + str(modules))
     module_id_list = []
-    for module in modules:
+    for module in modules.values():
         git_path = module['git_path']
         branch = module['branch']
         model_hdfs_path = module['hdfs_path']

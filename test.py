@@ -44,30 +44,40 @@
 #             break
 #         else:
 #             time.sleep(5)
-import json
 
-import requests
-from flask import Flask, request
-
-from JsonResponse import JsonResponse
-
-app = Flask(__name__)
-
-
-@app.route('/test', methods=['GET'])
-def test():
-    service_url = 'http://localhost:8100/test'
-    response = requests.post(url=service_url, json='{"data": "hello"}')
-    res = json.loads(response.text)['data']
-    return JsonResponse.success(data=str(res)).to_dict()
-
-
-@app.route('/test2', methods=['GET'])
-def test2():
-    service_url = 'http://localhost:8100/test2'
-    res = requests.get(url=service_url)
-    return str(res.text)
-
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8099)
+# import json
+#
+# import requests
+# from flask import Flask, request
+#
+# from JsonResponse import JsonResponse
+#
+# app = Flask(__name__)
+#
+#
+# @app.route('/test', methods=['GET'])
+# def test():
+#     service_url = 'http://localhost:8100/test'
+#     response = requests.post(url=service_url, json='{"data": "hello"}')
+#     res = json.loads(response.text)['data']
+#     return JsonResponse.success(data=str(res)).to_dict()
+#
+#
+# @app.route('/test2', methods=['GET'])
+# def test2():
+#     service_url = 'http://localhost:8100/test2'
+#     res = requests.get(url=service_url)
+#     return str(res.text)
+#
+#
+# if __name__ == '__main__':
+#     app.run(host='0.0.0.0', port=8099)
+project_config = {'modules':{'module1':{'git_path':'gitpath1','model_hdfs_path':'model-hdfs-path1','branch':'branch1'},'module2':{'git_path':'gitpath2','model_hdfs_path':'model-hdfs-path2','branch':'branch2'}}}
+# 将project_config写入yaml文件
+import yaml
+with open('project_config.yaml', 'w') as f:
+    yaml.dump(project_config, f)
+# 读取yaml文件
+with open('project_config.yaml', 'r') as f:
+    project_config = yaml.load(f, Loader=yaml.FullLoader)
+    print(project_config)
