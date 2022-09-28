@@ -1327,7 +1327,9 @@ def test2():
 @app.route('/request_service', methods=['POST'])
 def request_service():
     post_data = request.json
+    print('post_data is ' + str(post_data))
     service_url = post_data.get('service_url')
+    print('service_url is ' + service_url)
 
     res = requests.post(url=service_url, json=json.dumps(post_data))
     return JsonResponse.success(data=res.text).to_dict()
