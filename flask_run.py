@@ -1188,7 +1188,8 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
 def run_module():
     data = request.json
     module_id = data.get('module_id')
-    return run_module_by_id(module_id)
+    result = run_module_by_id(module_id)
+    return result
 
 
 def run_module_by_id(module_id):
