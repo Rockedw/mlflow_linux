@@ -769,16 +769,18 @@ def create_project():
         project_version = project.version + 1
         temp_project = Project(hdfs_path=hdfs_path, update_time=update_time, version=project_version)
         db.session.add(temp_project)
+    db.session.flush()
     for module_id in module_id_list:
         project_relation = ProjectRelation(project_id=temp_project.id, module_id=module_id)
         db.session.add(project_relation)
+        db.session.flush()
     try:
         db.session.commit()
         return JsonResponse.success(data='success').to_dict()
     except Exception as e:
         print(e)
         db.session.rollback()
-        return JsonResponse.error().to_dict()
+        return JsonResponse.error(e).to_dict()
 
 
 @app.route('/create_env', methods=['POST'])
