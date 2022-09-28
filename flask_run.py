@@ -727,8 +727,8 @@ def create_project():
     print('hdps_path:' + hdfs_path)
     if len(hdfs_path) <= 0 or not hdfs_client.status(hdfs_path=hdfs_path)['type'] == 'DIRECTORY':
         return JsonResponse.error(data='hdfs路径不存在').to_dict()
-    update_time = hdfs_client.status(hdfs_path=hdfs_path)['modificationTime']
-    saved_path = './temp/projects/' + update_time
+    update_time: int = hdfs_client.status(hdfs_path=hdfs_path)['modificationTime']
+    saved_path = './temp/projects/' + str(update_time)
     print('saved_path:' + saved_path)
     if not os.path.exists(saved_path):
         download_dir_from_hdfs(client=hdfs_client, hdfs_path=hdfs_path, local_path=saved_path)
