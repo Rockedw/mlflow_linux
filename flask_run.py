@@ -724,17 +724,17 @@ def run_module2():
 def create_project():
     data = request.json
     hdfs_path = data.get('project_hdfs_path')
-    print('hdps_path:' + hdfs_path)
+    print('hdfs_path:' + hdfs_path)
     if len(hdfs_path) <= 0 or not hdfs_client.status(hdfs_path=hdfs_path)['type'] == 'DIRECTORY':
         return JsonResponse.error(data='hdfs路径不存在').to_dict()
     update_time: int = hdfs_client.status(hdfs_path=hdfs_path)['modificationTime']
-    saved_path = './temp/projects/' + str(update_time)
+    saved_path = './temp/projects/' + hdfs_path.split('/')[-1]+'/'+str(update_time)
     print('saved_path:' + saved_path)
     if not os.path.exists(saved_path):
         download_dir_from_hdfs(client=hdfs_client, hdfs_path=hdfs_path, local_path=saved_path)
     if os.path.exists(saved_path + '/.git'):
         rmtree(saved_path + '/.git')
-    with open('./temp/project/' + hdfs_path.split('/')[-1] + '/config.yaml') as f:
+    with open(saved_path+'/config.yaml') as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
     f.close()
     modules = config['modules']
