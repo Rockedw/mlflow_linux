@@ -743,7 +743,7 @@ def create_project():
     for module in modules.values():
         git_path = module['git_path']
         branch = module['branch']
-        model_hdfs_path = module['hdfs_path']
+        model_hdfs_path = module['model_hdfs_path']
         model_update_time = hdfs_client.status(hdfs_path=model_hdfs_path)['modificationTime']
         repo_name = git_path.split('/')[-1]
         repo_owner = git_path.split('/')[-2]
