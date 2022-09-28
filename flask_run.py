@@ -1061,7 +1061,7 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
     path = version + '/' + repo_name
 
     model_local_paths.append(saved_model_path)
-    config_json['model_path'] = saved_model_path + '/' + model.model_name
+    config_json['model_path'] = saved_model_path
     config_json['port'] = port
     with open(path + '/mlflow_model_config.json', 'w') as f:
         f.write(json.dumps(config_json))
