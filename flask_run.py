@@ -597,7 +597,7 @@ def run_module2():
               'mlflow run ' + path + ' -P config=mlflow_model_config.json --env-manager=local'
     # command = 'mlflow run ' + repo_url + ' --version ' + branch_name
     print(command)
-    pid = cmd(command)
+    subp = cmd(command)
     # cmd(command)
     service_url = ''
     cnt = 0
@@ -613,7 +613,7 @@ def run_module2():
         try:
             service_url = f.readline()
             service_url_dict[key] = service_url
-            service_process_pid_dict[key] = pid
+            service_process_pid_dict[key] = subp.pid
             service_port_dict[key] = [port, int(time.time())]
         finally:
             service_lock.release()
@@ -728,16 +728,16 @@ def create_project():
     if len(hdfs_path) <= 0 or not hdfs_client.status(hdfs_path=hdfs_path)['type'] == 'DIRECTORY':
         return JsonResponse.error(data='hdfs路径不存在').to_dict()
     update_time: int = hdfs_client.status(hdfs_path=hdfs_path)['modificationTime']
-    saved_path = './temp/projects/' + hdfs_path.split('/')[-1]+'/'+str(update_time)
+    saved_path = './temp/projects/' + hdfs_path.split('/')[-1] + '/' + str(update_time)
     print('saved_path:' + saved_path)
     if not os.path.exists(saved_path):
         download_dir_from_hdfs(client=hdfs_client, hdfs_path=hdfs_path, local_path=saved_path)
     if os.path.exists(saved_path + '/.git'):
         rmtree(saved_path + '/.git')
-    with open(saved_path+'/config.yaml') as f:
+    with open(saved_path + '/config.yaml') as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
     f.close()
-    modules:dict = config['modules']
+    modules: dict = config['modules']
     print('modules:' + str(modules))
     module_id_list = []
     for module in modules.values():
@@ -840,7 +840,7 @@ def create_env():
               'mlflow run ' + path + ' -P config=mlflow_model_config.json'
     # command = 'mlflow run ' + repo_url + ' --version ' + branch_name
     print(command)
-    pid = cmd(command)
+    subp = cmd(command)
     # cmd(command)
     service_url = ''
     cnt = 0
@@ -857,12 +857,34 @@ def create_env():
         try:
             service_url = f.readline()
             service_url_dict[key] = service_url
-            service_process_pid_dict[key] = pid
+            service_process_pid_dict[key] = subp.pid
             service_port_dict[key] = [port, int(time.time())]
         finally:
             service_lock.release()
     f.close()
     return JsonResponse.success(data=service_url).to_dict()
+
+
+@app.route('create_module_env_by_id')
+def create_module_env_by_id():
+    data = request.json
+    module_id = data.get('module_id')
+    module = Module.query.filter_by(id=module_id).first()
+    if module is None:
+        return JsonResponse.error(data='没有对应的module').to_dict()
+    repo_id = module.repo_id
+    repo = Repository.query.filter_by(id=repo_id).first()
+    if repo is None:
+        return JsonResponse.error(data='没有对应的repo').to_dict()
+    repo_name = repo.name
+    repo_owner = repo.owner
+    branch_name = module.branch_name
+    model_hdfs_path = module.model_hdfs_path
+    model_update_time = module.model_update_time
+    model_version = module.model_version
+    model_name = model_hdfs_path.split('/')[-1]
+    return create_env(repo_owner=repo_owner, repo_name=repo_name, branch_name=branch_name,
+                      model_names=[model_name], model_versions=[model_version], update_time=model_update_time)
 
 
 def create_update_model(model_hdfs_path: str, update_time):
@@ -1073,7 +1095,7 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
               'mlflow run ' + path + ' -P config=mlflow_model_config.json --env-manager=local'
     # command = 'mlflow run ' + repo_url + ' --version ' + branch_name
     print(command)
-    pid = cmd(command)
+    subp = cmd(command)
     # cmd(command)
     service_url = ''
     cnt = 0
@@ -1089,12 +1111,12 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
         try:
             service_url = f.readline()
             service_url_dict[key] = service_url
-            service_process_pid_dict[key] = pid
+            service_process_pid_dict[key] = subp.pid
             service_port_dict[key] = [port, int(time.time())]
         finally:
             service_lock.release()
     f.close()
-    return service_url
+    return service_url, subp
 
 
 # @app.route('/run_module', methods=['POST'])
@@ -1188,7 +1210,7 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
 def run_module():
     data = request.json
     module_id = data.get('module_id')
-    result = run_module_by_id(module_id)
+    result, subp = run_module_by_id(module_id)
     return result
 
 
@@ -1200,11 +1222,11 @@ def run_module_by_id(module_id):
     branch_name = module.branch_name
     model_hdfs_path = module.model_hdfs_path
     model_update_time = module.model_update_time
-    service_url = load_model(repo_id=repo_id, branch_name=branch_name, model_hdfs_path=model_hdfs_path,
-                             model_update_time=model_update_time)
+    service_url, subp = load_model(repo_id=repo_id, branch_name=branch_name, model_hdfs_path=model_hdfs_path,
+                                   model_update_time=model_update_time)
     if not service_url == '':
-        return JsonResponse.success(data=service_url).to_dict()
-    return JsonResponse.error(data='启动服务失败').to_dict()
+        return JsonResponse.success(data=service_url).to_dict(), subp
+    return JsonResponse.error(data='启动服务失败').to_dict(), None
 
 
 @app.route('/run_project', methods=['POST'])
@@ -1383,6 +1405,18 @@ def delete_model():
         return JsonResponse.error().to_dict()
 
 
+@app.route('/delete_module', methods=['POST'])
+def delete_module():
+    data = request.json
+    module_id = data.get('module_id')
+    try:
+        db.session.query(Module).filter(Module.id == module_id).delete()
+        return JsonResponse.success(data='successful').to_dict()
+    except Exception as e:
+        print(e)
+        return JsonResponse.error(data='failed').to_dict()
+
+
 @app.route('/upload_model', methods=['POST'])
 def upload_model():
     if request.method == 'POST':
@@ -1420,7 +1454,7 @@ if __name__ == '__main__':
     # p1 = pickle.dumps(app)
     # print('================================')
     # print(p1)
-    app.run(host='0.0.0.0', port=8081, debug=True)
+    app.run(host='0.0.0.0', port=8081, debug=False)
     # project = Project(repo_id=1, branch_name='master')
     # print(db.session.add(project))
     # db.session.flush()
