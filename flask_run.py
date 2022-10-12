@@ -800,16 +800,16 @@ def create_env():
     branch_name = module.branch_name
     repo_url = git_url + repo_owner + '/' + repo_name + '.git'
     print(repo_url)
-    saved_path = '/temp/repos/create_env/' + repo_owner + '/' + repo_name + '/' + branch_name
+    saved_path = '/tep/repos/create_env/' + repo_owner + '/' + repo_name + '/' + branch_name
     if os.path.exists(saved_path):
         rmtree(saved_path)
     repo = Repo.clone_from(url=repo_url, to_path=saved_path)
     repo.git.checkout(branch_name)
     if os.path.exists(saved_path + '/.git'):
         rmtree(saved_path + '/.git')
-    if not os.path.exists(saved_path + '/MLProject'):
-        return JsonResponse.error(data='MLProject不存在').to_dict()
-    with open(saved_path + '/MLProject') as f:
+    if not os.path.exists(saved_path + '/MLproject'):
+        return JsonResponse.error(data='MLproject不存在').to_dict()
+    with open(saved_path + '/MLproject') as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
     f.close()
     conda_env = config['conda_env']
@@ -822,7 +822,7 @@ def create_env():
         f.write('    f.close()')
     f.close()
     # 写yaml文件
-    with open(saved_path + '/MLProject', 'w') as f:
+    with open(saved_path + '/MLproject', 'w') as f:
         f.write('name: hello_world\r')
         f.write('conda_env: ' + conda_env + '\r')
         f.write('entry_points:\r')
