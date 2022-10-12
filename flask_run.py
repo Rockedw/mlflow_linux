@@ -1118,7 +1118,7 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
         finally:
             service_lock.release()
     f.close()
-    return service_url, subp
+    return service_url
 
 
 # @app.route('/run_module', methods=['POST'])
@@ -1212,7 +1212,7 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
 def run_module():
     data = request.json
     module_id = data.get('module_id')
-    result, subp = run_module_by_id(module_id)
+    result = run_module_by_id(module_id)
     return result
 
 
@@ -1224,11 +1224,11 @@ def run_module_by_id(module_id):
     branch_name = module.branch_name
     model_hdfs_path = module.model_hdfs_path
     model_update_time = module.model_update_time
-    service_url, subp = load_model(repo_id=repo_id, branch_name=branch_name, model_hdfs_path=model_hdfs_path,
-                                   model_update_time=model_update_time)
+    service_url = load_model(repo_id=repo_id, branch_name=branch_name, model_hdfs_path=model_hdfs_path,
+                             model_update_time=model_update_time)
     if not service_url == '':
-        return JsonResponse.success(data=service_url).to_dict(), subp
-    return JsonResponse.error(data='启动服务失败').to_dict(), None
+        return JsonResponse.success(data=service_url).to_dict()
+    return JsonResponse.error(data='启动服务失败').to_dict()
 
 
 @app.route('/run_project', methods=['POST'])
