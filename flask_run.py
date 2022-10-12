@@ -50,6 +50,7 @@ service_url_dict = {}
 service_process_pid_dict = {}
 already_used_ports = []
 env_dict = []
+service_obj_dict = {}
 
 hdfs_client = Client(Config.HDFS_URL)
 
@@ -865,7 +866,7 @@ def create_env():
     return JsonResponse.success(data=service_url).to_dict()
 
 
-@app.route('create_module_env_by_id')
+@app.route('/create_module_env_by_id')
 def create_module_env_by_id():
     data = request.json
     module_id = data.get('module_id')
@@ -1113,6 +1114,7 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
             service_url_dict[key] = service_url
             service_process_pid_dict[key] = subp.pid
             service_port_dict[key] = [port, int(time.time())]
+            service_obj_dict[key] = subp
         finally:
             service_lock.release()
     f.close()
@@ -1387,6 +1389,7 @@ def auto_close_service():
                 del service_port_dict[k]
                 del service_url_dict[k]
                 del service_process_pid_dict[k]
+                del service_obj_dict[k]
                 already_used_ports.remove(v[0])
     service_lock.release()
     print("定时清理服务")
