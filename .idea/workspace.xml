@@ -62,15 +62,15 @@
     ]
   }
 }]]></component>
-  <component name="RunManager" selected="Flask server.Flask (flask_run.py)">
-    <configuration name="mlflow_minio_test" type="PythonConfigurationType" factoryName="Python">
+  <component name="RunManager" selected="Python.flask_run">
+    <configuration name="flask_run" type="PythonConfigurationType" factoryName="Python">
       <module name="mlflow_minio_test" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
-      <option name="SDK_HOME" value="" />
+      <option name="SDK_HOME" value="C:\Users\87212\.conda\envs\2070_env\python.exe" />
       <option name="WORKING_DIRECTORY" value="" />
       <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
@@ -203,6 +203,15 @@
       <option name="launchJavascriptDebuger" value="false" />
       <method v="2" />
     </configuration>
+    <list>
+      <item itemvalue="Flask server.Flask (flask_run.py)" />
+      <item itemvalue="Flask server.Flask (test.py)" />
+      <item itemvalue="Python.flask_run" />
+      <item itemvalue="Python.test" />
+      <item itemvalue="Python.test3" />
+      <item itemvalue="Python.upload_local_dir_to_minio" />
+      <item itemvalue="Python.util_methods" />
+    </list>
     <recent_temporary>
       <list>
         <item itemvalue="Flask server.Flask (test.py)" />
@@ -239,14 +248,7 @@
       <workItem from="1663732887411" duration="638000" />
       <workItem from="1663735056740" duration="28379000" />
       <workItem from="1664026113048" duration="13055000" />
-      <workItem from="1664245879444" duration="37326000" />
-    </task>
-    <task id="LOCAL-00008" summary="8.31">
-      <created>1661921904232</created>
-      <option name="number" value="00008" />
-      <option name="presentableId" value="LOCAL-00008" />
-      <option name="project" value="LOCAL" />
-      <updated>1661921904232</updated>
+      <workItem from="1664245879444" duration="42305000" />
     </task>
     <task id="LOCAL-00009" summary="8.31">
       <created>1661929461687</created>
@@ -584,7 +586,14 @@
       <option name="project" value="LOCAL" />
       <updated>1665542410553</updated>
     </task>
-    <option name="localTasksCounter" value="57" />
+    <task id="LOCAL-00057" summary="10.12">
+      <created>1665543981745</created>
+      <option name="number" value="00057" />
+      <option name="presentableId" value="LOCAL-00057" />
+      <option name="project" value="LOCAL" />
+      <updated>1665543981745</updated>
+    </task>
+    <option name="localTasksCounter" value="58" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -622,7 +631,7 @@
     <SUITE FILE_PATH="coverage/mlflow_linux$Flask__test2_py_.coverage" NAME="Flask (test2.py) Coverage Results" MODIFIED="1661999678640" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
     <SUITE FILE_PATH="coverage/mlflow_linux$upload_local_dir_to_minio.coverage" NAME="upload_local_dir_to_minio Coverage Results" MODIFIED="1662091189953" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/mlflow_linux$test.coverage" NAME="test Coverage Results" MODIFIED="1664354449641" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/mlflow_linux$Flask__flask_run_py_.coverage" NAME="Flask (flask_run.py) Coverage Results" MODIFIED="1665478581147" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+    <SUITE FILE_PATH="coverage/mlflow_linux$Flask__flask_run_py_.coverage" NAME="Flask (flask_run.py) Coverage Results" MODIFIED="1665563078798" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
     <SUITE FILE_PATH="coverage/mlflow_linux$util_methods.coverage" NAME="util_methods Coverage Results" MODIFIED="1663854407114" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/mlflow_linux$Flask__predict_py_.coverage" NAME="Flask (predict.py) Coverage Results" MODIFIED="1661855990586" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
     <SUITE FILE_PATH="coverage/mlflow_linux$Flask__test_py_.coverage" NAME="Flask (test.py) Coverage Results" MODIFIED="1665475434684" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
