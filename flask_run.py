@@ -648,7 +648,7 @@ def run_module2():
 #                                                                    update_time=update_time
 #                                                                    )
 #     print('branches:' + str(branches))
-#     version = './temp/repos/' + owner_name + '/' + repo_name + '/' + temp_version
+#     version = './tmp/repos/' + owner_name + '/' + repo_name + '/' + temp_version
 #     if not os.path.exists(version):
 #         return JsonResponse.error(data='没有对应的代码仓库').to_dict()
 #     cwd = os.getcwd()
@@ -880,10 +880,9 @@ def create_env_by_module_id():
 
 
 def create_update_model(model_hdfs_path: str, update_time):
+    print('create_update_model')
     model_name = model_hdfs_path.split('/')[-1]
     saved_model_path = '/tmp/models/' + model_name + '/' + str(update_time)
-    if not os.path.exists(saved_model_path):
-        os.makedirs(saved_model_path)
     model = Model.query.filter_by(model_hdfs_path=model_hdfs_path).order_by(Model.version.desc()).first()
     if model is not None:
         next_version = model.version + 1
@@ -914,6 +913,7 @@ def create_update_model(model_hdfs_path: str, update_time):
 
 
 def create_module(repo_id, branch_name, model_hdfs_path, model_update_time, model_version):
+    print('create_module')
     module = Module.query.filter_by(repo_id=repo_id, branch_name=branch_name,
                                     model_hdfs_path=model_hdfs_path,
                                     model_update_time=model_update_time,
@@ -1042,7 +1042,7 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
     if model is None:
         print('没有model')
         return ''
-    saved_model_path = '/temp/models/' + model.model_name + '/' + str(model.update_time)
+    saved_model_path = '/tmp/models/' + model.model_name + '/' + str(model.update_time)
     if not os.path.exists(saved_model_path):
         download_dir_from_hdfs(client=hdfs_client, hdfs_path=model.model_hdfs_path, local_path=saved_model_path)
 
@@ -1132,7 +1132,7 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
 #                                   version=model_version).first()
 #     if model is None:
 #         return JsonResponse.error(data='没有对应的model').to_dict()
-#     saved_model_path = '/temp/models/' + model.model_name + '/' + str(model.update_time)
+#     saved_model_path = '/tmp/models/' + model.model_name + '/' + str(model.update_time)
 #     if not os.path.exists(saved_model_path):
 #         download_dir_from_hdfs(client=hdfs_client, hdfs_path=model.model_hdfs_path, local_path=saved_model_path)
 #
@@ -1155,7 +1155,7 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
 #                                                                    update_time=repo_update_time
 #                                                                    )
 #     print('branches:' + str(branches))
-#     version = './temp/repos/' + owner_name + '/' + repo_name + '/' + temp_version
+#     version = './tmp/repos/' + owner_name + '/' + repo_name + '/' + temp_version
 #     if not os.path.exists(version):
 #         return JsonResponse.error(data='没有对应的代码仓库').to_dict()
 #     cwd = os.getcwd()
@@ -1263,7 +1263,7 @@ def run_project():
 #     data = request.json
 #     config_hdfs_path = data.get('config_hdfs_path')
 #     try:
-#         hdfs_client.download(hdfs_path=config_hdfs_path, local_path='./temp/project/config/' + config_hdfs_path)
+#         hdfs_client.download(hdfs_path=config_hdfs_path, local_path='./tmp/project/config/' + config_hdfs_path)
 
 
 @app.route('/delete_project_by_project_id', methods=['POST'])
