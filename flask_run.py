@@ -51,6 +51,7 @@ service_process_pid_dict = {}
 already_used_ports = []
 env_dict = []
 service_obj_dict = {}
+creating_env_dict = {}
 
 hdfs_client = Client(Config.HDFS_URL)
 
@@ -323,7 +324,7 @@ def query_branches_by_repo_name_and_owner(owner_name, repo_name, update_time):
     """
     repo_url = git_url + owner_name + '/' + repo_name + '.git'
     print(repo_url)
-    path = './repos/' + owner_name + '/' + repo_name
+    path = '/tmp/repos/' + owner_name + '/' + repo_name
     repo = None
     time = path + '/' + str(update_time) + '.time'
     if os.path.exists(path):
@@ -346,7 +347,7 @@ def query_branches_by_repo_name_and_owner(owner_name, repo_name, update_time):
         remote_branches.append(ref)
 
     print(remote_branches)
-    temp_path = './temp/repos/' + owner_name + '/' + repo_name
+    temp_path = '/tmp/repos/' + owner_name + '/' + repo_name
     try:
         temp_version = str(len(os.listdir(temp_path)))
     except Exception as e:
@@ -410,12 +411,12 @@ def query_file_by_owner_and_name_and_branch():
     temp_version = data_json.get('temp_version')
     print('abcded' + str(len(temp_version)))
     if len(temp_version) > 0:
-        path = './temp/repos/' + owner_name + '/' + repo_name + '/' + temp_version + '/' + repo_name
+        path = '/tmp/repos/' + owner_name + '/' + repo_name + '/' + temp_version + '/' + repo_name
     else:
-        path = './repos/' + owner_name + '/' + repo_name
+        path = '/tmp/repos/' + owner_name + '/' + repo_name
     if branch_name is not None:
         if not os.path.exists(path):
-            return JsonResponse.error(msg='There is no git directory').to_dict()
+            return JsonResponse.error(data='There is no git directory').to_dict()
         cwd = os.getcwd()
         command = 'cd ' + cwd + ' && ' + 'cd ' + path + ' && ' + 'git checkout ' + branch_name
         print(command)
@@ -487,9 +488,9 @@ def change_branch_by_name():
     repo_name = data.get('repo_name')
     branch_name = data.get('branch_name')
     temp_version = data.get('temp_version')
-    path = './temp/repos/' + owner_name + '/' + repo_name + '/' + temp_version
+    path = '/tmp/repos/' + owner_name + '/' + repo_name + '/' + temp_version
     if not os.path.exists(path):
-        return JsonResponse.error(msg='There is no git directory').to_dict()
+        return JsonResponse.error(data='There is no git directory').to_dict()
     cwd = os.getcwd()
     command = 'cd ' + cwd + ' && ' + 'cd ' + path + ' && ' + 'git checkout ' + branch_name
     print(command)
@@ -515,12 +516,12 @@ def run_mlflow_project():
     s3_models: list = data.get('s3_models')
 
     repo_url = git_url + owner_name + '/' + repo_name + '.git'
-    version = './temp/repos/' + owner_name + '/' + repo_name + '/' + temp_version
+    version = '/tmp/repos/' + owner_name + '/' + repo_name + '/' + temp_version
     path = version + '/' + repo_name
     # print('path : ' + path)
     if not os.path.exists(path):
         print('nothing')
-        return JsonResponse.error(msg='There is no git directory').to_dict()
+        return JsonResponse.error(data='There is no git directory').to_dict()
     cwd = os.getcwd()
     if not os.path.exists(path + '/.git'):
         print(path + '/.git 不存在')
@@ -560,6 +561,7 @@ def run_module2():
     update_time = data.get('repo_update_time')
     model_name: str = data.get('model_name')
     model_version: int = data.get('model_version')
+
     print(data)
     key = repo_name + '/' + branch_name
     key = key + '/' + model_name + '/' + str(model_version)
@@ -574,7 +576,7 @@ def run_module2():
                                                                    update_time=update_time
                                                                    )
     print('branches:' + str(branches))
-    version = './temp/repos/' + owner_name + '/' + repo_name + '/' + temp_version
+    version = '/tmp/repos/' + owner_name + '/' + repo_name + '/' + temp_version
     if not os.path.exists(version):
         return JsonResponse.error(data='没有对应的代码仓库').to_dict()
     cwd = os.getcwd()
@@ -729,7 +731,7 @@ def create_project():
     if len(hdfs_path) <= 0 or not hdfs_client.status(hdfs_path=hdfs_path)['type'] == 'DIRECTORY':
         return JsonResponse.error(data='hdfs路径不存在').to_dict()
     update_time: int = hdfs_client.status(hdfs_path=hdfs_path)['modificationTime']
-    saved_path = './temp/projects/' + hdfs_path.split('/')[-1] + '/' + str(update_time)
+    saved_path = '/tmp/projects/' + hdfs_path.split('/')[-1] + '/' + str(update_time)
     print('saved_path:' + saved_path)
     if not os.path.exists(saved_path):
         download_dir_from_hdfs(client=hdfs_client, hdfs_path=hdfs_path, local_path=saved_path)
@@ -784,87 +786,104 @@ def create_project():
         return JsonResponse.error(e).to_dict()
 
 
-@app.route('/create_env', methods=['GET'])
-def create_env():
-    # data = request.json
-    module_id = 1
-    module = Module.query.filter_by(id=module_id).first()
-    if module is None:
-        return JsonResponse.error(data='module不存在').to_dict()
-    repo_id = module.repo_id
-    repo = Repository.query.filter_by(id=repo_id).first()
-    if repo is None:
-        return JsonResponse.error(data='repo不存在').to_dict()
-    repo_owner = repo.owner_name
-    repo_name = repo.repo_name
-    branch_name = module.branch_name
-    repo_url = git_url + repo_owner + '/' + repo_name + '.git'
-    print(repo_url)
-    saved_path = '/tep/repos/create_env/' + repo_owner + '/' + repo_name + '/' + branch_name
-    if os.path.exists(saved_path):
-        rmtree(saved_path)
-    repo = Repo.clone_from(url=repo_url, to_path=saved_path)
-    repo.git.checkout(branch_name)
-    if os.path.exists(saved_path + '/.git'):
-        rmtree(saved_path + '/.git')
-    if not os.path.exists(saved_path + '/MLproject'):
-        return JsonResponse.error(data='MLproject不存在').to_dict()
-    with open(saved_path + '/MLproject') as f:
-        config = yaml.load(f, Loader=yaml.FullLoader)
-    f.close()
-    conda_env = config['conda_env']
-    if conda_env is None:
-        return JsonResponse.error(data='conda.yaml不存在').to_dict()
-    os.remove(saved_path + '/MLProject')
-    with open(saved_path + '/write_hello_world.python', 'w') as f:
-        f.write('with open("success.txt", "w") as f:\r')
-        f.write('    f.write("hello world")')
-        f.write('    f.close()')
-    f.close()
-    # 写yaml文件
-    with open(saved_path + '/MLproject', 'w') as f:
-        f.write('name: hello_world\r')
-        f.write('conda_env: ' + conda_env + '\r')
-        f.write('entry_points:\r')
-        f.write('  main:\r')
-        f.write('    command: "python write_hello_world.python"\r')
-    f.close()
-    subp = cmd('cd ' + saved_path + ' && mlflow run .')
-    subp.wait()
-    # 输出子进程信息
-    print(subp.stdout.read().decode('utf-8'))
-    print(subp.stderr.read().decode('utf-8'))
-    if os.path.exists(saved_path + '/success.txt'):
-        return JsonResponse.success(data='success').to_dict()
-    else:
-        return JsonResponse.error(data='创建环境失败').to_dict()
+def create_env(module_id):
+    try:
+        creating_env_dict[module_id] = True
+        module = Module.query.filter_by(id=module_id).first()
+        if module is None:
+            return JsonResponse.error(data='module不存在').to_dict()
+        repo_id = module.repo_id
+        repo = Repository.query.filter_by(id=repo_id).first()
+        if repo is None:
+            return JsonResponse.error(data='repo不存在').to_dict()
+        repo_owner = repo.owner_name
+        repo_name = repo.repo_name
+        repo_update_time = repo.update_time
+        branch_name = module.branch_name
+        repo_url = git_url + repo_owner + '/' + repo_name + '.git'
+        print(repo_url)
+        saved_path = '/tmp/repos/create_env/' + repo_owner + '/' + repo_name + '/' + branch_name + '/' + str(
+            repo_update_time)
+        if os.path.exists(saved_path):
+            if os.path.exists(saved_path + '/success'):
+                return JsonResponse.success(data='success').to_dict()
+            else:
+                rmtree(saved_path)
+        repo = Repo.clone_from(url=repo_url, to_path=saved_path)
+        repo.git.checkout(branch_name)
+        if os.path.exists(saved_path + '/.git'):
+            rmtree(saved_path + '/.git')
+        if not os.path.exists(saved_path + '/MLproject'):
+            return JsonResponse.error(data='MLproject不存在').to_dict()
+        with open(saved_path + '/MLproject') as f:
+            config = yaml.load(f, Loader=yaml.FullLoader)
+        f.close()
+        conda_env = config['conda_env']
+        if conda_env is None:
+            return JsonResponse.error(data='conda.yaml不存在').to_dict()
+        os.remove(saved_path + '/MLproject')
+        with open(saved_path + '/write_hello_world.py', 'w') as f:
+            f.write('with open("success.txt", "w") as f:\n')
+            f.write('    f.write("hello world")\n')
+            f.write('    f.close()')
+        f.close()
+        # 写yaml文件
+        with open(saved_path + '/MLproject', 'w') as f:
+            f.write('name: hello_world\n')
+            f.write('conda_env: ' + conda_env + '\n')
+            f.write('entry_points:\n')
+            f.write('  main:\n')
+            f.write('    command: "python write_hello_world.py"\n')
+        f.close()
+        subp = cmd('cd ' + saved_path + ' && mlflow run .')
+        subp.wait()
+        # 输出子进程信息
+        print(subp.stdout.read())
+        print(subp.stderr.read())
+        if os.path.exists(saved_path + '/success.txt'):
+            return JsonResponse.success(data='success').to_dict()
+        else:
+            return JsonResponse.error(data='创建环境失败,请检查conda文件').to_dict()
+    except Exception as e:
+        print(e)
+        return JsonResponse.error(data=e).to_dict()
+    finally:
+        del creating_env_dict[module_id]
 
 
-@app.route('/create_module_env_by_id')
-def create_module_env_by_id():
+@app.route('/create_env_by_module_id', methods=['POST'])
+def create_env_by_module_id():
     data = request.json
     module_id = data.get('module_id')
-    module = Module.query.filter_by(id=module_id).first()
-    if module is None:
-        return JsonResponse.error(data='没有对应的module').to_dict()
-    repo_id = module.repo_id
-    repo = Repository.query.filter_by(id=repo_id).first()
-    if repo is None:
-        return JsonResponse.error(data='没有对应的repo').to_dict()
-    repo_name = repo.name
-    repo_owner = repo.owner
-    branch_name = module.branch_name
-    model_hdfs_path = module.model_hdfs_path
-    model_update_time = module.model_update_time
-    model_version = module.model_version
-    model_name = model_hdfs_path.split('/')[-1]
-    return create_env(repo_owner=repo_owner, repo_name=repo_name, branch_name=branch_name,
-                      model_names=[model_name], model_versions=[model_version], update_time=model_update_time)
+    return create_env(module_id)
+
+
+# @app.route('/create_module_env_by_id')
+# def create_module_env_by_id():
+#     data = request.json
+#     module_id = data.get('module_id')
+#     module = Module.query.filter_by(id=module_id).first()
+#     if module is None:
+#         return JsonResponse.error(data='没有对应的module').to_dict()
+#     repo_id = module.repo_id
+#     repo = Repository.query.filter_by(id=repo_id).first()
+#     if repo is None:
+#         return JsonResponse.error(data='没有对应的repo').to_dict()
+#     repo_name = repo.name
+#     repo_owner = repo.owner
+#     branch_name = module.branch_name
+#     model_hdfs_path = module.model_hdfs_path
+#     model_update_time = module.model_update_time
+#     model_version = module.model_version
+#     model_name = model_hdfs_path.split('/')[-1]
+#     return create_env(module_id)
 
 
 def create_update_model(model_hdfs_path: str, update_time):
     model_name = model_hdfs_path.split('/')[-1]
-    saved_model_path = './temp/models/' + model_name + '/' + str(update_time)
+    saved_model_path = '/tmp/models/' + model_name + '/' + str(update_time)
+    if not os.path.exists(saved_model_path):
+        os.makedirs(saved_model_path)
     model = Model.query.filter_by(model_hdfs_path=model_hdfs_path).order_by(Model.version.desc()).first()
     if model is not None:
         next_version = model.version + 1
@@ -933,7 +952,7 @@ def create_module2():
         print(e)
         return JsonResponse.error(data='没有对应的配置文件').to_dict()
     try:
-        local_file_path = './temp/module/config/' + config_hdfs_path
+        local_file_path = '/tmp/module/config/' + config_hdfs_path
         if os.path.exists(local_file_path):
             os.remove(local_file_path)
         create_dir(local_file_path)
@@ -962,11 +981,13 @@ def create_module2():
                 return JsonResponse.error(data='没有对应的代码仓库').to_dict()
             repo_id = repo.id
             if version != -1:
-                if not create_module(repo_id=repo_id, branch_name=branch_name, model_hdfs_path=model_hdfs_path,
-                                     model_update_time=update_time, model_version=version) == -1:
-                    return JsonResponse.success(data='创建module成功').to_dict()
+                module_id = create_module(repo_id=repo_id, branch_name=branch_name, model_hdfs_path=model_hdfs_path,
+                                          model_update_time=update_time, model_version=version)
+                if module_id != -1:
+                    threading.Thread(target=create_env, args=(module_id,)).start()
+                    return JsonResponse.success(data='创建成功，并且在初始化对应的conda环境').to_dict()
                 else:
-                    return JsonResponse.error(data='创建module失败').to_dict()
+                    return JsonResponse.error(data='创建模块失败').to_dict()
             else:
                 return JsonResponse.error(data='创建模型失败').to_dict()
         except Exception as e:
@@ -1045,7 +1066,7 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
                                                                    update_time=repo_update_time
                                                                    )
     print('branches:' + str(branches))
-    version = './temp/repos/' + owner_name + '/' + repo_name + '/' + temp_version
+    version = '/tmp/repos/' + owner_name + '/' + repo_name + '/' + temp_version
     if not os.path.exists(version):
         print('没有本地代码仓库')
         return ''
@@ -1186,6 +1207,8 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
 def run_module():
     data = request.json
     module_id = data.get('module_id')
+    if module_id in creating_env_dict:
+        return JsonResponse.error(data='正在创建环境，请稍后').to_dict()
     result = run_module_by_id(module_id)
     return result
 
@@ -1198,6 +1221,13 @@ def run_module_by_id(module_id):
     branch_name = module.branch_name
     model_hdfs_path = module.model_hdfs_path
     model_update_time = module.model_update_time
+    repo = Repository.query.filter_by(id=repo_id).first()
+    saved_path = '/tmp/repos/create_env/' + repo.owner_name + '/' + repo.repo_name + '/' + branch_name + '/' + str(
+        repo.update_time)
+    if not os.path.exists(saved_path) or not os.path.exists(saved_path + '/success'):
+        # 启动线程
+        threading.Thread(target=create_env, args=(module_id,)).start()
+        return JsonResponse.error(data='环境尚未创建，即将开始创建环境').to_dict()
     service_url = load_model(repo_id=repo_id, branch_name=branch_name, model_hdfs_path=model_hdfs_path,
                              model_update_time=model_update_time)
     if not service_url == '':
@@ -1214,7 +1244,7 @@ def run_project():
     if project is None:
         return JsonResponse.error(data='没有对应的project').to_dict()
     update_time = project.update_time
-    local_saved_path = './temp/projects/' + str(project_id) + '/' + str(update_time)
+    local_saved_path = '/tmp/projects/' + str(project_id) + '/' + str(update_time)
     if not os.path.exists(local_saved_path) and not project_hdfs_path == hdfs_client.status(project_hdfs_path)[
         'modificationTime']:
         return JsonResponse.error(data='本地没有对应的project').to_dict()
@@ -1278,7 +1308,7 @@ def test2():
         print(e)
         return JsonResponse.error(data='没有对应的配置文件').to_dict()
     try:
-        local_file_path = './temp/module/config/' + config_hdfs_path
+        local_file_path = '/tmp/module/config/' + config_hdfs_path
         if os.path.exists(local_file_path):
             os.remove(local_file_path)
         create_dir(local_file_path)
