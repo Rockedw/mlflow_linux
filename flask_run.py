@@ -1080,7 +1080,7 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
     path = version + '/' + repo_name
 
     model_local_paths.append(saved_model_path)
-    config_json['model_path'] = saved_model_path + '/' + model.model_name
+    config_json['model_path'] = saved_model_path
     config_json['port'] = port
     with open(path + '/mlflow_model_config.json', 'w') as f:
         f.write(json.dumps(config_json))
@@ -1232,13 +1232,14 @@ def run_module_by_id(module_id):
         repo.update_time)
     if not os.path.exists(saved_path) or not os.path.exists(saved_path + '/success.txt'):
         # 启动线程
-        threading.Thread(target=create_env, args=(module_id,)).start()
+        t = threading.Thread(target=create_env, args=(module_id,))
+        t.start()
         return JsonResponse.error(data='环境尚未创建，即将开始创建环境').to_dict()
     service_url, msg = load_model(repo_id=repo_id, branch_name=branch_name, model_hdfs_path=model_hdfs_path,
                                   model_update_time=model_update_time)
     if not service_url == '':
         return JsonResponse.success(data=service_url).to_dict()
-    return JsonResponse.error(data='msg').to_dict()
+    return JsonResponse.error(data=msg).to_dict()
 
 
 @app.route('/run_project', methods=['POST'])
