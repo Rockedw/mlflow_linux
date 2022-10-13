@@ -1080,7 +1080,7 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
     path = version + '/' + repo_name
 
     model_local_paths.append(saved_model_path)
-    config_json['model_path'] = saved_model_path+'/'+model.model_name
+    config_json['model_path'] = saved_model_path + '/' + model.model_name
     config_json['port'] = port
     with open(path + '/mlflow_model_config.json', 'w') as f:
         f.write(json.dumps(config_json))
@@ -1097,24 +1097,29 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
     service_url = ''
     cnt = 0
     while cnt <= 10:
+        if subp.poll() is not None:
+            return '', subp.stderr.read()
         print(cnt)
         cnt += 1
         if os.path.exists(path + '/' + 'mlflow_output'):
             break
         else:
             time.sleep(5)
-    with open(path + '/' + 'mlflow_output') as f:
-        service_lock.acquire()
-        try:
-            service_url = f.readline()
-            service_url_dict[key] = service_url
-            service_process_pid_dict[key] = subp.pid
-            service_port_dict[key] = [port, int(time.time())]
-            service_obj_dict[key] = subp
-        finally:
-            service_lock.release()
-    f.close()
-    return service_url
+    try:
+        with open(path + '/' + 'mlflow_output') as f:
+            service_lock.acquire()
+            try:
+                service_url = f.readline()
+                service_url_dict[key] = service_url
+                service_process_pid_dict[key] = subp.pid
+                service_port_dict[key] = [port, int(time.time())]
+                service_obj_dict[key] = subp
+            finally:
+                service_lock.release()
+        f.close()
+        return service_url, 'success'
+    except:
+        return '', 'error'
 
 
 # @app.route('/run_module', methods=['POST'])
@@ -1229,11 +1234,11 @@ def run_module_by_id(module_id):
         # 启动线程
         threading.Thread(target=create_env, args=(module_id,)).start()
         return JsonResponse.error(data='环境尚未创建，即将开始创建环境').to_dict()
-    service_url = load_model(repo_id=repo_id, branch_name=branch_name, model_hdfs_path=model_hdfs_path,
-                             model_update_time=model_update_time)
+    service_url, msg = load_model(repo_id=repo_id, branch_name=branch_name, model_hdfs_path=model_hdfs_path,
+                                  model_update_time=model_update_time)
     if not service_url == '':
         return JsonResponse.success(data=service_url).to_dict()
-    return JsonResponse.error(data='启动服务失败').to_dict()
+    return JsonResponse.error(data='msg').to_dict()
 
 
 @app.route('/run_project', methods=['POST'])
