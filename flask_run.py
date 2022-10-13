@@ -889,7 +889,8 @@ def create_update_model(model_hdfs_path: str, update_time):
     else:
         next_version = 1
     model2 = Model.query.filter_by(model_hdfs_path=model_hdfs_path, update_time=update_time).first()
-    if not os.path.exists(saved_model_path):
+    # 文件夹不存在或者文件夹为空
+    if not os.path.exists(saved_model_path) or len(os.listdir(saved_model_path)) == 0:
         os.makedirs(saved_model_path)
         print('下载模型')
         try:
@@ -1079,7 +1080,7 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
     path = version + '/' + repo_name
 
     model_local_paths.append(saved_model_path)
-    config_json['model_path'] = saved_model_path
+    config_json['model_path'] = saved_model_path+'/'+model.model_name
     config_json['port'] = port
     with open(path + '/mlflow_model_config.json', 'w') as f:
         f.write(json.dumps(config_json))
@@ -1088,7 +1089,7 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
               'cd ' + path + ' && ' + \
               'rm -rf .git &&' + \
               'cd ' + cwd + ' && ' + \
-              'mlflow run ' + path + ' -P config=mlflow_model_config.json --env-manager=local'
+              'mlflow run ' + path + ' -P config=mlflow_model_config.json'
     # command = 'mlflow run ' + repo_url + ' --version ' + branch_name
     print(command)
     subp = cmd(command)
