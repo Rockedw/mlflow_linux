@@ -998,7 +998,7 @@ def create_module2():
         return JsonResponse.error(data='创建module失败').to_dict()
 
 
-@app.route('/query_all_module')
+@app.route('/query_all_module', methods=['GET'])
 def query_all_module():
     modules = Module.query.all()
     res = []
@@ -1020,7 +1020,7 @@ def query_all_module():
     return JsonResponse.success(data=res).to_dict()
 
 
-@app.route('/delete_module_by_id')
+@app.route('/delete_module_by_id', methods=['POST'])
 def delete_module_by_id():
     data = request.json
     module_id = data.get('module_id')
