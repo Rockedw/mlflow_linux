@@ -43,7 +43,7 @@ class Config:
     endpoint_url = 'http://39.105.6.98:43099/'  # minio server地址
     git_url = 'http://172.17.0.4:3000/'  # gitea地址
     UPLOAD_FOLDER = r'./upload'
-    HDFS_URL = 'http://172.31.129.148:50070'
+    HDFS_URL = 'http://172.31.129.149:50070'
 
 # 本地用
 # class Config:

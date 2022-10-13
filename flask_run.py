@@ -1224,7 +1224,7 @@ def run_module_by_id(module_id):
     repo = Repository.query.filter_by(id=repo_id).first()
     saved_path = '/tmp/repos/create_env/' + repo.owner_name + '/' + repo.repo_name + '/' + branch_name + '/' + str(
         repo.update_time)
-    if not os.path.exists(saved_path) or not os.path.exists(saved_path + '/success'):
+    if not os.path.exists(saved_path) or not os.path.exists(saved_path + '/success.txt'):
         # 启动线程
         threading.Thread(target=create_env, args=(module_id,)).start()
         return JsonResponse.error(data='环境尚未创建，即将开始创建环境').to_dict()
