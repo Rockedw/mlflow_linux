@@ -388,10 +388,10 @@ def query_branches_by_owner_and_name():
     repo_name = data.get('repo_name')
     owner_name = data.get('owner_name')
     update_time = data.get('update_time')
-    branches, temp_version = query_branches_by_repo_name_and_owner(owner_name=owner_name,
-                                                                   repo_name=repo_name,
-                                                                   update_time=update_time
-                                                                   )
+    branches, temp_version, _ = query_branches_by_repo_name_and_owner(owner_name=owner_name,
+                                                                      repo_name=repo_name,
+                                                                      update_time=update_time
+                                                                      )
     print('branches : ' + str(branches))
     print('temp_version : ' + temp_version)
     if len(branches) > 0:
@@ -576,21 +576,20 @@ def run_module2():
         return JsonResponse.success(data=service_url_dict[key]).to_dict()
     service_lock.release()
     print('释放service_lock')
-    branches, temp_version = query_branches_by_repo_name_and_owner(owner_name=owner_name,
-                                                                   repo_name=repo_name,
-                                                                   update_time=update_time
-                                                                   )
+    branches, temp_version, path = query_branches_by_repo_name_and_owner(owner_name=owner_name,
+                                                                         repo_name=repo_name,
+                                                                         update_time=update_time
+                                                                         )
     print('branches:' + str(branches))
     version = '/tmp/repos/' + owner_name + '/' + repo_name + '/' + temp_version
     if not os.path.exists(version):
         return JsonResponse.error(data='没有对应的代码仓库').to_dict()
     cwd = os.getcwd()
-    command = 'cd ' + cwd + ' && ' + 'cd ' + version + '/' + repo_name + ' && ' + 'git checkout ' + branch_name
+    command = 'cd ' + path + ' && ' + 'git checkout ' + branch_name
     cmd(command)
     config_json = {}
     model_local_paths = []
     port = portscanner(already_used_ports=already_used_ports, lock=lock)
-    path = version + '/' + repo_name
     local_path = download_directory(download_path=get_model_source(model_name, version=model_version))
     model_local_paths.append(local_path)
     config_json[model_name] = local_path
@@ -1080,24 +1079,23 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
         print('没有本地代码仓库')
         return '', 'error'
     cwd = os.getcwd()
-    command = 'cd ' + cwd + ' && ' + 'cd ' + version + '/' + repo_name + ' && ' + 'git checkout ' + branch_name
+    command = 'cd ' + repo_path + ' && ' + 'git checkout ' + branch_name
     cmd(command)
     config_json = {}
     model_local_paths = []
     port = portscanner(already_used_ports=already_used_ports, lock=lock)
-    path = version + '/' + repo_name
 
     model_local_paths.append(saved_model_path)
     config_json['model_path'] = saved_model_path
     config_json['port'] = port
-    with open(path + '/mlflow_model_config.json', 'w') as f:
+    with open(version + '/mlflow_model_config.json', 'w') as f:
         f.write(json.dumps(config_json))
     f.close()
     command = 'cd ' + cwd + ' && ' + \
-              'cd ' + path + ' && ' + \
+              'cd ' + version + ' && ' + \
               'rm -rf .git &&' + \
               'cd ' + cwd + ' && ' + \
-              'mlflow run ' + path + ' -P config=mlflow_model_config.json'
+              'mlflow run ' + version + ' -P config=mlflow_model_config.json'
     # command = 'mlflow run ' + repo_url + ' --version ' + branch_name
     print(command)
     subp = cmd(command)
@@ -1109,12 +1107,12 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
             return '', subp.stderr.read()
         print(cnt)
         cnt += 1
-        if os.path.exists(path + '/' + 'mlflow_output'):
+        if os.path.exists(version + '/' + 'mlflow_output'):
             break
         else:
             time.sleep(5)
     try:
-        with open(path + '/' + 'mlflow_output') as f:
+        with open(version + '/' + 'mlflow_output') as f:
             service_lock.acquire()
             try:
                 service_url = f.readline()
