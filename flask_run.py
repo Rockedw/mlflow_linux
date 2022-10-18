@@ -1393,13 +1393,13 @@ def close_service():
     return key + '已经关闭'
 
 
-@scheduler.task('interval', id='auto_close_service', seconds=600)
+@scheduler.task('interval', id='auto_close_service', seconds=600, max_instances=100)
 def auto_close_service():
     service_lock.acquire()
     current_time = int(time.time())
-    for k, v in service_port_dict.items():
-        t = v[1]
-        port = v[0]
+    for k in service_port_dict.keys():
+        t = service_port_dict[k][1]
+        port = service_port_dict[k][0]
         if current_time - t >= 600:
             try:
                 kill_port(port)
@@ -1408,7 +1408,7 @@ def auto_close_service():
                 del service_url_dict[k]
                 del service_process_pid_dict[k]
                 del service_obj_dict[k]
-                already_used_ports.remove(v[0])
+                already_used_ports.remove(port)
     service_lock.release()
     print("定时清理服务")
 
