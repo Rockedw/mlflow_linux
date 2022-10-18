@@ -1291,8 +1291,22 @@ def get_module_by_project_id():
     for project_relation in project_relations:
         module_id = project_relation.module_id
         module = Module.query.filter_by(id=module_id).first()
-        modules.append({'id': module.id, 'name': module.name})
-    return JsonResponse.success(data=modules).to_dict()
+        modules.append(module)
+    res = []
+    for module in modules:
+        repo = Repository.query.filter_by(id=module.repo_id).first()
+        res.append({
+             'id': module.id, 'repo_id': module.repo_id,
+             'repo_name': repo.repo_name,
+             'owner_name': repo.owner_name,
+             'branch_name': module.branch_name,
+             'repo_update_time': repo.update_time,
+             'model_name': module.model_name,
+             'model_hdfs_path': module.model_hdfs_path,
+             # 时间戳转换为时间
+             'model_update_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(module.model_update_time / 1000)),
+             'model_version': module.model_version})
+    return JsonResponse.success(data=res).to_dict()
 
 
 # @app.route('/create_project', methods=['POST'])
