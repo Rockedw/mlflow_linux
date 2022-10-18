@@ -40,6 +40,7 @@ scheduler.init_app(app)
 scheduler.start()
 lock = threading.Lock()
 service_lock = threading.Lock()
+create_version_lock = threading.Lock()
 bucket_name = Config.bucket_name
 access_key = Config.access_key
 secret_key = Config.secret_key
@@ -343,18 +344,21 @@ def query_branches_by_repo_name_and_owner(owner_name, repo_name, update_time):
         f.close()
     remote_branches = []
     for ref in repo.git.branch('-r').split('\n'):
-        print(ref)
         remote_branches.append(ref)
-
     print(remote_branches)
-    temp_path = '/tmp/repos/' + owner_name + '/' + repo_name
+    temp_path = '/tmp/repos/' + owner_name + '/' + repo_name+'/temp'
+    create_version_lock.acquire(blocking=True, timeout=-1)
     try:
         temp_version = str(len(os.listdir(temp_path)))
     except Exception as e:
+        print(e)
         temp_version = '0'
 
     to_path = temp_path + '/' + temp_version + '/' + repo_name
+    if not os.path.exists(to_path):
+        os.makedirs(to_path)
     shutil.copytree(path, to_path)
+    create_version_lock.release()
 
     return remote_branches, temp_version
 
@@ -1072,7 +1076,7 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
                                                                    update_time=repo_update_time
                                                                    )
     print('branches:' + str(branches))
-    version = '/tmp/repos/' + owner_name + '/' + repo_name + '/' + temp_version
+    version = '/tmp/repos/' + owner_name + '/' + repo_name + '/temp/' + temp_version
     if not os.path.exists(version):
         print('没有本地代码仓库')
         return '', 'error'
