@@ -110,7 +110,9 @@ def scan_dir(path, head: dict = None):
 
 
 def portscanner(already_used_ports, lock: threading.Lock, host='127.0.0.1', ports=range(40000, 41000)):
-    with lock:
+    try:
+        print('获取lock')
+        lock.acquire(blocking=True, timeout=60)
         for port in ports:
             if port not in already_used_ports:
                 try:
@@ -121,6 +123,9 @@ def portscanner(already_used_ports, lock: threading.Lock, host='127.0.0.1', port
                     print(f"{port} open")
                     already_used_ports.append(port)
                     return port
+    finally:
+        lock.release()
+        print('释放lock')
 
 
 def kill_port(port):

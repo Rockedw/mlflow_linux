@@ -565,12 +565,15 @@ def run_module2():
     print(data)
     key = repo_name + '/' + branch_name
     key = key + '/' + model_name + '/' + str(model_version)
+    print('获取service_lock')
     service_lock.acquire(blocking=True, timeout=60.0)
     if key in service_url_dict and key in service_port_dict:
         service_port_dict[key][1] = int(time.time())
         service_lock.release()
+        print('释放service_lock')
         return JsonResponse.success(data=service_url_dict[key]).to_dict()
     service_lock.release()
+    print('释放service_lock')
     branches, temp_version = query_branches_by_repo_name_and_owner(owner_name=owner_name,
                                                                    repo_name=repo_name,
                                                                    update_time=update_time
@@ -612,6 +615,7 @@ def run_module2():
         else:
             time.sleep(5)
     with open(path + '/' + 'mlflow_output') as f:
+        print('获取service_lock')
         service_lock.acquire()
         try:
             service_url = f.readline()
@@ -620,6 +624,7 @@ def run_module2():
             service_port_dict[key] = [port, int(time.time())]
         finally:
             service_lock.release()
+            print('释放service_lock')
     f.close()
     return JsonResponse.success(data=service_url).to_dict()
 
@@ -1042,7 +1047,7 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
     model = Model.query.filter_by(model_hdfs_path=model_hdfs_path, update_time=model_update_time).first()
     if model is None:
         print('没有model')
-        return '','error'
+        return '', 'error'
     saved_model_path = '/tmp/models/' + model.model_name + '/' + str(model.update_time)
     if not os.path.exists(saved_model_path):
         download_dir_from_hdfs(client=hdfs_client, hdfs_path=model.model_hdfs_path, local_path=saved_model_path)
@@ -1050,7 +1055,7 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
     repo = Repository.query.filter_by(id=repo_id).first()
     if repo is None:
         print('没有对应的代码仓库')
-        return '','error'
+        return '', 'error'
     repo_name = repo.repo_name
     owner_name = repo.owner_name
     repo_update_time = repo.update_time
@@ -1059,7 +1064,7 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
     if key in service_url_dict and key in service_port_dict:
         service_port_dict[key][1] = int(time.time())
         service_lock.release()
-        return service_url_dict[key],'success'
+        return service_url_dict[key], 'success'
     service_lock.release()
 
     branches, temp_version = query_branches_by_repo_name_and_owner(owner_name=owner_name,
@@ -1070,7 +1075,7 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
     version = '/tmp/repos/' + owner_name + '/' + repo_name + '/' + temp_version
     if not os.path.exists(version):
         print('没有本地代码仓库')
-        return '','error'
+        return '', 'error'
     cwd = os.getcwd()
     command = 'cd ' + cwd + ' && ' + 'cd ' + version + '/' + repo_name + ' && ' + 'git checkout ' + branch_name
     cmd(command)
