@@ -251,6 +251,8 @@ def query_repo_by_owner():
     repos = Repository.query.filter_by(owner_name=owner).all()
     res = []
     for repo in repos:
+        #转为日期格式
+        update_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(repo.update_time/1000))
         res.append(
             {'id': repo.id, 'owner_name': repo.owner_name, 'repo_name': repo.repo_name, 'lower_name': repo.lower_name,
              'update_time': repo.update_time})
@@ -371,7 +373,7 @@ def query_all_repo():
     res = []
     for repo in repos:
         #时间戳转换成日期
-        update_time= time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(repo.update_time))
+        update_time= time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(repo.update_time/1000))
         res.append(
             {'id': repo.id, 'owner_name': repo.owner_name, 'repo_name': repo.repo_name, 'lower_name': repo.lower_name,
              'update_time': update_time})
@@ -458,7 +460,7 @@ def query_all_model():
     res = []
     for model in models:
         #时间戳转换成日期
-        update_time= time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(model.update_time))
+        update_time= time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(model.update_time/1000))
         res.append(
             {'id': model.id, 'model_name': model.model_name, 'version': model.version,
              'model_hdfs_path': model.model_hdfs_path, 'update_time': update_time})
@@ -1254,7 +1256,7 @@ def run_module_by_id(module_id):
     return JsonResponse.error(data=msg).to_dict()
 
 
-@app.route('/run_project', methods=['POST'])
+@app.route('/run_project_by_id', methods=['POST'])
 def run_project():
     data = request.json
     project_id = data.get('project_id')
@@ -1275,6 +1277,21 @@ def run_project():
         module_id = project_relation.module_id
         run_module_by_id(module_id)
     return JsonResponse.success(data='success').to_dict()
+
+@app.route('/query_module_by_project_id', methods=['POST'])
+def get_module_by_project_id():
+    data = request.json
+    project_id = data.get('project_id')
+    project = Project.query.filter_by(id=project_id).first()
+    if project is None:
+        return JsonResponse.error(data='没有对应的project').to_dict()
+    project_relations = ProjectRelation.query.filter_by(project_id=project_id).all()
+    modules = []
+    for project_relation in project_relations:
+        module_id = project_relation.module_id
+        module = Module.query.filter_by(id=module_id).first()
+        modules.append(module)
+    return JsonResponse.success(data=modules).to_dict()
 
 
 # @app.route('/create_project', methods=['POST'])
