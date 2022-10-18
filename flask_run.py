@@ -1118,7 +1118,8 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
                 service_lock.release()
         f.close()
         return service_url, 'success'
-    except:
+    except Exception as e:
+        print(e)
         return '', 'error'
 
 
