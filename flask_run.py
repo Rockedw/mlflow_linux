@@ -370,9 +370,11 @@ def query_all_repo():
     repos = Repository.query.all()
     res = []
     for repo in repos:
+        #时间戳转换成日期
+        update_time= time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(repo.update_time))
         res.append(
             {'id': repo.id, 'owner_name': repo.owner_name, 'repo_name': repo.repo_name, 'lower_name': repo.lower_name,
-             'update_time': repo.update_time})
+             'update_time': update_time})
     return JsonResponse.success(data=res).to_dict()
 
 
@@ -455,9 +457,11 @@ def query_all_model():
     models = Model.query.all()
     res = []
     for model in models:
+        #时间戳转换成日期
+        update_time= time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(model.update_time))
         res.append(
             {'id': model.id, 'model_name': model.model_name, 'version': model.version,
-             'model_hdfs_path': model.model_hdfs_path, 'update_time': model.update_time})
+             'model_hdfs_path': model.model_hdfs_path, 'update_time': update_time})
     return JsonResponse.success(data=res).to_dict()
 
 
@@ -1021,7 +1025,8 @@ def query_all_module():
              'repo_update_time': repo.update_time,
              'model_name': module.model_name,
              'model_hdfs_path': module.model_hdfs_path,
-             'model_update_time': module.model_update_time,
+             #时间戳转换为时间
+             'model_update_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(module.model_update_time / 1000)),
              'model_version': module.model_version})
         index += 1
     return JsonResponse.success(data=res).to_dict()
