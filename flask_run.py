@@ -355,8 +355,6 @@ def query_branches_by_repo_name_and_owner(owner_name, repo_name, update_time):
         temp_version = '0'
 
     to_path = temp_path + '/' + temp_version + '/' + repo_name
-    if not os.path.exists(to_path):
-        os.makedirs(to_path)
     shutil.copytree(path, to_path)
     create_version_lock.release()
 
