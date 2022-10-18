@@ -325,7 +325,7 @@ def query_branches_by_repo_name_and_owner(owner_name, repo_name, update_time):
     """
     repo_url = git_url + owner_name + '/' + repo_name + '.git'
     print(repo_url)
-    path = '/tmp/repos/' + owner_name + '/' + repo_name
+    path = '/tmp/repos/real/' + owner_name + '/' + repo_name
     repo = None
     time = path + '/' + str(update_time) + '.time'
     if os.path.exists(path):
@@ -346,7 +346,7 @@ def query_branches_by_repo_name_and_owner(owner_name, repo_name, update_time):
     for ref in repo.git.branch('-r').split('\n'):
         remote_branches.append(ref)
     print(remote_branches)
-    temp_path = '/tmp/repos/' + owner_name + '/' + repo_name+'/temp'
+    temp_path = '/tmp/repos/temp/' + owner_name + '/' + repo_name
     create_version_lock.acquire(blocking=True, timeout=-1)
     try:
         temp_version = str(len(os.listdir(temp_path)))
@@ -358,7 +358,7 @@ def query_branches_by_repo_name_and_owner(owner_name, repo_name, update_time):
     shutil.copytree(path, to_path)
     create_version_lock.release()
 
-    return remote_branches, temp_version
+    return remote_branches, temp_version, to_path
 
 
 @app.route('/query_all_repo')
@@ -1069,12 +1069,13 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
         return service_url_dict[key], 'success'
     service_lock.release()
 
-    branches, temp_version = query_branches_by_repo_name_and_owner(owner_name=owner_name,
-                                                                   repo_name=repo_name,
-                                                                   update_time=repo_update_time
-                                                                   )
+    branches, temp_version, repo_path = query_branches_by_repo_name_and_owner(owner_name=owner_name,
+                                                                              repo_name=repo_name,
+                                                                              update_time=repo_update_time
+                                                                              )
     print('branches:' + str(branches))
-    version = '/tmp/repos/' + owner_name + '/' + repo_name + '/temp/' + temp_version
+    # version = '/tmp/repos/' + owner_name + '/' + repo_name + '/temp/' + temp_version
+    version = repo_path
     if not os.path.exists(version):
         print('没有本地代码仓库')
         return '', 'error'
