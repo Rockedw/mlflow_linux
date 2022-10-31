@@ -833,6 +833,17 @@ def create_env(module_id):
         conda_env = config['conda_env']
         if conda_env is None:
             return JsonResponse.error(data='conda.yaml不存在').to_dict()
+        # 在conda_env对应的文件下添加flask,flask_cors,json,argparse包
+        with open(saved_path + '/' + conda_env) as f:
+            conda_config = yaml.load(f, Loader=yaml.FullLoader)
+        f.close()
+        conda_config['dependencies']['pip'].append('flask')
+        conda_config['dependencies']['pip'].append('flask-cors')
+        conda_config['dependencies']['pip'].append('argparse')
+
+        with open(saved_path + '/' + conda_env, 'w') as f:
+            yaml.dump(conda_config, f)
+        f.close()
         os.remove(saved_path + '/MLproject')
         with open(saved_path + '/write_hello_world.py', 'w') as f:
             f.write('with open("success.txt", "w") as f:\n')
@@ -1432,9 +1443,10 @@ def close_service():
 
 @scheduler.task('interval', id='auto_close_service', seconds=600, max_instances=100)
 def auto_close_service():
+    keys = list(service_url_dict.keys())
     service_lock.acquire()
     current_time = int(time.time())
-    for k in service_port_dict.keys():
+    for k in keys:
         t = service_port_dict[k][1]
         port = service_port_dict[k][0]
         if current_time - t >= 600:
