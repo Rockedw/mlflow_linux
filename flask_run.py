@@ -548,7 +548,6 @@ def run_mlflow_project():
     command = 'cd ' + cwd + ' && ' + \
               'cd ' + path + ' && ' + \
               'rm -rf .git &&' + \
-              'cd ' + cwd + ' && ' + \
               'mlflow run ' + path + ' -P config=./mlflow_model_config.json -P input=' + input_text + ' --env-manager=local'
     # command = 'mlflow run ' + repo_url + ' --version ' + branch_name
     print(command)
@@ -606,7 +605,6 @@ def run_module2():
     command = 'cd ' + cwd + ' && ' + \
               'cd ' + path + ' && ' + \
               'rm -rf .git &&' + \
-              'cd ' + cwd + ' && ' + \
               'mlflow run ' + path + ' -P config=mlflow_model_config.json --env-manager=local'
     # command = 'mlflow run ' + repo_url + ' --version ' + branch_name
     print(command)
@@ -1112,7 +1110,6 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
     command = 'cd ' + cwd + ' && ' + \
               'cd ' + version + ' && ' + \
               'rm -rf .git &&' + \
-              'cd ' + cwd + ' && ' + \
               'mlflow run ' + version + ' -P config=mlflow_model_config.json'
     # command = 'mlflow run ' + repo_url + ' --version ' + branch_name
     print(command)
