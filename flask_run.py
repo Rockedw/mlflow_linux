@@ -2,6 +2,7 @@
 import datetime
 import logging
 import signal
+import sys
 import time
 
 import requests
@@ -353,6 +354,7 @@ def query_branches_by_repo_name_and_owner(owner_name, repo_name, update_time):
     try:
         temp_version = str(len(os.listdir(temp_path)))
     except Exception as e:
+        print('line number: ' + str(sys.exc_info()[-1].tb_lineno))
         print(e)
         temp_version = '0'
 
@@ -791,6 +793,7 @@ def create_project():
         db.session.commit()
         return JsonResponse.success(data='success').to_dict()
     except Exception as e:
+        print('line number: ' + str(sys.exc_info()[-1].tb_lineno))
         print(e)
         db.session.rollback()
         return JsonResponse.error(e).to_dict()
@@ -866,6 +869,7 @@ def create_env(module_id):
         else:
             return JsonResponse.error(data='创建环境失败,请检查conda文件').to_dict()
     except Exception as e:
+        print('line number: ' + str(sys.exc_info()[-1].tb_lineno))
         print(e)
         return JsonResponse.error(data=e).to_dict()
     finally:
@@ -917,6 +921,7 @@ def create_update_model(model_hdfs_path: str, update_time):
         try:
             download_dir_from_hdfs(client=hdfs_client, hdfs_path=model_hdfs_path, local_path=saved_model_path)
         except Exception as e:
+            print('line number: ' + str(sys.exc_info()[-1].tb_lineno))
             print(e)
             print('下载失败')
     if model2 is None:
@@ -959,6 +964,7 @@ def create_module(repo_id, branch_name, model_hdfs_path, model_update_time, mode
         return module2.id
     except Exception as e:
         db.session.rollback()
+        print('line number: ' + str(sys.exc_info()[-1].tb_lineno))
         print(e)
         return -1
 
@@ -971,6 +977,7 @@ def create_module2():
     try:
         hdfs_client.status(hdfs_path=config_hdfs_path, strict=False)['modificationTime']
     except Exception as e:
+        print('line number: ' + str(sys.exc_info()[-1].tb_lineno))
         print(e)
         return JsonResponse.error(data='没有对应的配置文件').to_dict()
     try:
@@ -1013,9 +1020,11 @@ def create_module2():
             else:
                 return JsonResponse.error(data='创建模型失败').to_dict()
         except Exception as e:
+            print('line number: ' + str(sys.exc_info()[-1].tb_lineno))
             print(e)
             return JsonResponse.error(data='创建module失败').to_dict()
     except Exception as e:
+        print('line number: ' + str(sys.exc_info()[-1].tb_lineno))
         print(e)
         return JsonResponse.error(data='创建module失败').to_dict()
 
@@ -1140,6 +1149,8 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
         f.close()
         return service_url, 'success'
     except Exception as e:
+        # 输出错误的代码行号
+        print('line number: ' + str(sys.exc_info()[-1].tb_lineno))
         print(e)
         return '', 'error'
 
@@ -1335,6 +1346,7 @@ def delete_project_by_project_id():
         db.session.commit()
         return JsonResponse.success(data='success').to_dict()
     except Exception as e:
+        print('line number: ' + str(sys.exc_info()[-1].tb_lineno))
         print(e)
         db.session.rollback()
         return JsonResponse.error(data='error').to_dict()
@@ -1364,6 +1376,7 @@ def test2():
     try:
         hdfs_client.status(hdfs_path=config_hdfs_path, strict=False)['modificationTime']
     except Exception as e:
+        print('line number: ' + str(sys.exc_info()[-1].tb_lineno))
         print(e)
         return JsonResponse.error(data='没有对应的配置文件').to_dict()
     try:
@@ -1404,9 +1417,11 @@ def test2():
             else:
                 return JsonResponse.error(data='创建模型失败').to_dict()
         except Exception as e:
+            print('line number: ' + str(sys.exc_info()[-1].tb_lineno))
             print(e)
             return JsonResponse.error(data='创建module失败').to_dict()
     except Exception as e:
+        print('line number: ' + str(sys.exc_info()[-1].tb_lineno))
         print(e)
         return JsonResponse.error(data='创建module失败').to_dict()
 
@@ -1468,6 +1483,7 @@ def delete_model():
         db.session.query(Model).filter(Model.model_name == model_name and Model.version == model_version).delete()
         return JsonResponse.success().to_dict()
     except Exception as e:
+        print('line number: ' + str(sys.exc_info()[-1].tb_lineno))
         print(e)
         return JsonResponse.error().to_dict()
 
@@ -1480,6 +1496,7 @@ def delete_module():
         db.session.query(Module).filter(Module.id == module_id).delete()
         return JsonResponse.success(data='successful').to_dict()
     except Exception as e:
+        print('line number: ' + str(sys.exc_info()[-1].tb_lineno))
         print(e)
         return JsonResponse.error(data='failed').to_dict()
 
