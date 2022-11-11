@@ -838,10 +838,13 @@ def create_env(module_id):
         with open(saved_path + '/' + conda_env) as f:
             conda_config = yaml.load(f, Loader=yaml.FullLoader)
         f.close()
-        conda_config['dependencies']['pip'].append('flask')
-        conda_config['dependencies']['pip'].append('flask-cors')
-        conda_config['dependencies']['pip'].append('argparse')
-
+        for dependency in conda_config['dependencies']:
+            if isinstance(dependency, dict):
+                for key in dependency.keys():
+                    if key == 'pip':
+                        dependency[key].append('flask')
+                        dependency[key].append('flask_cors')
+                        dependency[key].append('argparse')
         with open(saved_path + '/' + conda_env, 'w') as f:
             yaml.dump(conda_config, f)
         f.close()
