@@ -352,6 +352,8 @@ def query_branches_by_repo_name_and_owner(owner_name, repo_name, update_time):
     temp_path = '/tmp/repos/temp/' + owner_name + '/' + repo_name
     create_version_lock.acquire(blocking=True, timeout=-1)
     try:
+        if not os.path.exists(temp_path):
+            os.makedirs(temp_path)
         temp_version = str(len(os.listdir(temp_path)))
     except Exception as e:
         print('line number: ' + str(sys.exc_info()[-1].tb_lineno))
