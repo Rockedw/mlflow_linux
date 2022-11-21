@@ -5,7 +5,38 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5bebb915-b354-40e8-8c16-c8ae2fa12a3e" name="Changes" comment="11.11">
+      <change afterPath="$PROJECT_DIR$/test/test.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/0/072084f402a942bf8dad8b4708502c08/artifacts/model/MLproject" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/0/072084f402a942bf8dad8b4708502c08/artifacts/model/conda.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/0/072084f402a942bf8dad8b4708502c08/artifacts/model/config.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/0/072084f402a942bf8dad8b4708502c08/artifacts/model/dir2/dir2_test" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/0/072084f402a942bf8dad8b4708502c08/artifacts/model/predict.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/0/0d47d35713ef483ebd245be79c516719/artifacts/model/MLproject" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/0/0d47d35713ef483ebd245be79c516719/artifacts/model/conda.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/0/0d47d35713ef483ebd245be79c516719/artifacts/model/config.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/0/0d47d35713ef483ebd245be79c516719/artifacts/model/dir2/dir2_test" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/0/0d47d35713ef483ebd245be79c516719/artifacts/model/predict.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/0/36fce13f7d444ecb86791a82c6e538e2/artifacts/model/MLproject" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/0/36fce13f7d444ecb86791a82c6e538e2/artifacts/model/conda.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/0/36fce13f7d444ecb86791a82c6e538e2/artifacts/model/config.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/0/36fce13f7d444ecb86791a82c6e538e2/artifacts/model/dir2/dir2_test" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/0/36fce13f7d444ecb86791a82c6e538e2/artifacts/model/predict.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/ceate_table.txt" beforeDir="false" afterPath="$PROJECT_DIR$/test/ceate_table.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/3/ddc7779843a9495b9ad96e0bca7a6b28/artifacts/iris_rf/conda.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/3/ddc7779843a9495b9ad96e0bca7a6b28/artifacts/iris_rf/model.pkl" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/3/ddc7779843a9495b9ad96e0bca7a6b28/artifacts/iris_rf/python_env.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/3/ddc7779843a9495b9ad96e0bca7a6b28/artifacts/iris_rf/requirements.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/first_repo/MLproject" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/first_repo/branch_test" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/first_repo/conda.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/first_repo/predict.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/first_repo/train.ipynb" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/first_repo/train.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/first_repo/wine-quality.csv" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/flask_run.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_run.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/upload_local_dir_to_minio.py" beforeDir="false" afterPath="$PROJECT_DIR$/test/upload_local_dir_to_minio.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -38,10 +69,10 @@
     <setting file="file://$PROJECT_DIR$/JsonResponse.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/conda_linux_env.yaml" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/config.py" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/environment.yaml" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/flask_run.py" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/project_config.yaml" root0="FORCE_HIGHLIGHTING" />
-    <setting file="file://$PROJECT_DIR$/test.py" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/test/environment.yaml" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/test/project_config.yaml" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/test/test.py" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/util_methods.py" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="MarkdownSettingsMigration">
@@ -73,7 +104,14 @@
     ]
   }
 }</component>
-  <component name="RunManager" selected="Python.flask_run">
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\87212\Desktop\mlflow_linux" />
+      <recent name="C:\Users\87212\Desktop\mlflow_linux\test" />
+      <recent name="C:\Users\87212\Desktop\mlflow_linux\upload_test" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Python.test">
     <configuration name="flask_run" type="PythonConfigurationType" factoryName="Python">
       <module name="mlflow_minio_test" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -109,7 +147,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/test.py" />
+      <option name="SCRIPT_NAME" value="C:\Users\87212\Desktop\mlflow_linux\upload_test\test.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -153,7 +191,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/upload_local_dir_to_minio.py" />
+      <option name="SCRIPT_NAME" value="C:\Users\87212\Desktop\mlflow_linux\upload_test\upload_local_dir_to_minio.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -175,7 +213,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/util_methods.py" />
+      <option name="SCRIPT_NAME" value="C:\Users\87212\Desktop\mlflow_linux\util_methods.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -199,9 +237,9 @@
       <option name="launchJavascriptDebuger" value="false" />
       <method v="2" />
     </configuration>
-    <configuration name="Flask (test.py)" type="Python.FlaskServer" temporary="true" nameIsGenerated="true">
+    <configuration name="Flask" type="Python.FlaskServer" temporary="true" nameIsGenerated="true">
       <module name="mlflow_minio_test" />
-      <option name="target" value="$PROJECT_DIR$/test.py" />
+      <option name="target" value="$PROJECT_DIR$/upload_test/test.py" />
       <option name="targetType" value="PATH" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -216,7 +254,7 @@
     </configuration>
     <list>
       <item itemvalue="Flask server.Flask (flask_run.py)" />
-      <item itemvalue="Flask server.Flask (test.py)" />
+      <item itemvalue="Flask server.Flask (upload_test/test.py)" />
       <item itemvalue="Python.flask_run" />
       <item itemvalue="Python.test" />
       <item itemvalue="Python.test3" />
@@ -225,8 +263,8 @@
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Flask server.Flask (test.py)" />
         <item itemvalue="Python.test" />
+        <item itemvalue="Flask server.Flask (upload_test/test.py)" />
         <item itemvalue="Python.util_methods" />
         <item itemvalue="Python.upload_local_dir_to_minio" />
         <item itemvalue="Python.test3" />
@@ -265,14 +303,8 @@
       <workItem from="1666057201416" duration="17071000" />
       <workItem from="1666855185215" duration="2171000" />
       <workItem from="1667190349748" duration="13102000" />
-      <workItem from="1668159417378" duration="744000" />
-    </task>
-    <task id="LOCAL-00033" summary="测试">
-      <created>1663921767939</created>
-      <option name="number" value="00033" />
-      <option name="presentableId" value="LOCAL-00033" />
-      <option name="project" value="LOCAL" />
-      <updated>1663921767939</updated>
+      <workItem from="1668159417378" duration="3157000" />
+      <workItem from="1668999377041" duration="660000" />
     </task>
     <task id="LOCAL-00034" summary="测试">
       <created>1663921788481</created>
@@ -610,7 +642,14 @@
       <option name="project" value="LOCAL" />
       <updated>1668159913565</updated>
     </task>
-    <option name="localTasksCounter" value="82" />
+    <task id="LOCAL-00082" summary="11.11">
+      <created>1668160247811</created>
+      <option name="number" value="00082" />
+      <option name="presentableId" value="LOCAL-00082" />
+      <option name="project" value="LOCAL" />
+      <updated>1668160247812</updated>
+    </task>
+    <option name="localTasksCounter" value="83" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -652,8 +691,8 @@
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/mlflow_linux$Flask__test2_py_.coverage" NAME="Flask (test2.py) Coverage Results" MODIFIED="1661999678640" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
     <SUITE FILE_PATH="coverage/mlflow_linux$upload_local_dir_to_minio.coverage" NAME="upload_local_dir_to_minio Coverage Results" MODIFIED="1662091189953" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/mlflow_linux$test.coverage" NAME="test Coverage Results" MODIFIED="1664354449641" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/mlflow_linux$Flask__flask_run_py_.coverage" NAME="Flask (flask_run.py) Coverage Results" MODIFIED="1665563078798" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+    <SUITE FILE_PATH="coverage/mlflow_linux$test.coverage" NAME="test Coverage Results" MODIFIED="1668163437046" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/mlflow_linux$util_methods.coverage" NAME="util_methods Coverage Results" MODIFIED="1663854407114" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/mlflow_linux$Flask__predict_py_.coverage" NAME="Flask (predict.py) Coverage Results" MODIFIED="1661855990586" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
     <SUITE FILE_PATH="coverage/mlflow_linux$Flask__test_py_.coverage" NAME="Flask (test.py) Coverage Results" MODIFIED="1665475434684" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />

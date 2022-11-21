@@ -1,9 +1,6 @@
 # -*- coding: UTF-8 -*-
-import datetime
-import logging
 import signal
 import sys
-import time
 
 import requests
 import yaml
@@ -13,9 +10,6 @@ from flask_sqlalchemy import SQLAlchemy
 import pymysql
 import os
 from git import Repo
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from werkzeug.utils import secure_filename
 
 from config import Config
 from util_methods import cmd, download_directory, rmtree, scan_dir, portscanner, kill_port, upload_model, create_dir, \
@@ -1124,7 +1118,7 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
     command = 'cd ' + cwd + ' && ' + \
               'cd ' + version + ' && ' + \
               'rm -rf .git &&' + \
-              'mlflow run ' + version + ' -P config=mlflow_model_config.json'
+              'mlflow run ' + version + ' -P config='+version+'/mlflow_model_config.json'
     # command = 'mlflow run ' + repo_url + ' --version ' + branch_name
     print(command)
     subp = cmd(command)
@@ -1133,6 +1127,7 @@ def load_model(repo_id, branch_name, model_hdfs_path, model_update_time):
     cnt = 0
     while cnt <= 10:
         if subp.poll() is not None:
+            print(str(subp.stderr.read()))
             return '', subp.stderr.read()
         print(cnt)
         cnt += 1
