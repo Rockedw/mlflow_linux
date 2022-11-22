@@ -1432,8 +1432,8 @@ def request_service():
     print('post_data is ' + str(post_data))
     service_url = post_data.get('service_url')
     print('service_url is ' + service_url)
-
     res = requests.post(url=service_url, json=json.dumps(post_data))
+    print('res is ' + str(res))
     return JsonResponse.success(data=res.text).to_dict()
 
 
